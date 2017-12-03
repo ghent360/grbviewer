@@ -1,0 +1,25 @@
+{
+  "name": "grbviewr",
+  "version": "0.0.1",
+  "description": "Gerber viewer for the web",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "gerber"
+  ],
+  "author": "Venelin Efremov <veffremov@iqury.us>",
+  "license": "MIT",
+  "dependencies": {
+    "@types/react": "^16.0.26",
+    "@types/react-dom": "^16.0.3",
+    "react": "^16.2.0",
+    "react-dom": "^16.2.0"
+  },
+  "devDependencies": {
+    "awesome-typescript-loader": "^3.4.1",
+    "source-map-loader": "^0.2.3",
+    "typescript": "^2.6.2"
+  }
+}
