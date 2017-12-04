@@ -3,8 +3,8 @@ import * as ReactDOM from "react-dom";
 import * as JSZip from 'jszip';
 import {BoardLayer, BoardSide, GerberUtils} from "./GerberUtils";
 
-import { Hello } from "./components/Hello";
-import { LayerList } from "./components/LayerList";
+import {Hello} from "./components/Hello";
+import {LayerList} from "./components/LayerList";
 import {FileOpenButton} from "./components/FileOpenButton";
 
 function readSingleFile(file:File):void {

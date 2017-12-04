@@ -8,12 +8,30 @@ export interface FileOpenButtonProps {
     accept?:string
 }
 
-export class FileOpenButton extends React.Component<FileOpenButtonProps, {}> {
-    onFileSelected(files:FileList) {
-        let fileName = files[0];
-        if (fileName) {
-            this.props.onChange(fileName);
+class FileOpenButtonState {
+    fileName?:string;
+}
+export class FileOpenButton extends React.Component<FileOpenButtonProps, FileOpenButtonState> {
+    constructor(props:FileOpenButtonProps, context?:any) {
+        super(props, context);
+        this.state = {};
+    }
+
+    onFileSelected(e:React.ChangeEvent<HTMLInputElement>) {
+        let file = e.target.files[0];
+        if (file) {
+            this.setState({fileName:file.name});
+            this.props.onChange(file);
+            return;
         }
+        this.setState({});
+    }
+
+    getFileName() {
+        if (this.state.fileName) {
+            return this.state.fileName;
+        }
+        return "Choose a file";
     }
 
     render() {
@@ -22,11 +40,11 @@ export class FileOpenButton extends React.Component<FileOpenButtonProps, {}> {
             <input
                 id={"fileOpen_" + this.props.id}
                 type="file"
-                onChange={(e) => this.onFileSelected(e.target.files)}
+                onChange={(e) => this.onFileSelected(e)}
                 className="inputfile"
                 style={this.props.style}
                 accept={this.props.accept}/>
-            <label htmlFor={"fileOpen_" + this.props.id}><strong>Choose a file</strong></label>
+            <label htmlFor={"fileOpen_" + this.props.id}><strong>{this.getFileName()}</strong></label>
           </div>);
     }
 }
