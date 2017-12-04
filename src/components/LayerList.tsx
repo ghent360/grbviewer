@@ -8,6 +8,7 @@ export interface LayerInfo {
     readonly layerName:string;
     // Copper, solder mask, drill etc.
     readonly layerType:string;
+    readonly status:string;
 }
 
 export interface LayerListProps { 
@@ -20,6 +21,7 @@ export class LayerList extends React.Component<LayerListProps, {}> {
         { accessor: 'fileName', Header:'File Name', headerStyle:LayerList.LeftAlignText },
         { accessor: 'layerName', Header:'Layer Name', headerStyle:LayerList.LeftAlignText },
         { accessor: 'layerType', Header:'Type', headerStyle:LayerList.LeftAlignText },
+        { accessor: 'status', Header:'Status', headerStyle:LayerList.LeftAlignText },
     ];
 
     render() {

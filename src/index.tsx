@@ -1,44 +1,36 @@
 import * as React from "react";
 import * as ReactDOM from "react-dom";
-import * as JSZip from 'jszip';
-import {BoardLayer, BoardSide, GerberUtils} from "./GerberUtils";
 
 import {Hello} from "./components/Hello";
-import {LayerList} from "./components/LayerList";
+import {GerberViewer} from "./components/GerberViewer";
 import {FileOpenButton} from "./components/FileOpenButton";
 
-function readSingleFile(file:File):void {
-    let reader = new FileReader();
-    reader.onload = (e:ProgressEvent) => {
-        processFile(reader.result);
-    };
-    reader.onerror = (e:ErrorEvent) => {
-        console.log("Error " + e.error);
-    }
-    reader.readAsArrayBuffer(file);
+class AppState {
+    file:File;
 }
 
-function processFile(stream:ArrayBuffer):void {
-    new JSZip().loadAsync(stream).then(
-        zip => { 
-            console.log("Completer loading the zip file.");
-            for(let f in zip.files) {
-                let t = GerberUtils.determineSideAndLayer(f);
-                console.log("File '" + f + "' side:" + BoardSide[t.side] + " layer:" + BoardLayer[t.layer]);
-            }
-        });
+class App extends React.Component<{}, AppState> {
+    constructor(props:{}, context?:any) {
+        super(props, context);
+        this.state = { file:null };
+    }
+
+    handleChangeFile(file:File) {
+        this.setState({file:file});
+    }
+
+    render() {
+        return <div>
+            <FileOpenButton key="fileInput" onChange={(f) => this.handleChangeFile(f)} accept=".zip"/>,
+            <GerberViewer key="gerberViewer" file={this.state.file}/>
+        </div>;
+    }
 }
 
 ReactDOM.render(
     [
         <Hello key="tst" compiler="TypeScript" framework="React" />,
-        <FileOpenButton key="fileInput" onChange={readSingleFile} accept=".zip"/>,
-        <LayerList key="layerList" layers={[
-            {fileName:"aa.GTL", layerName:"Top", layerType:"Copper"},
-            {fileName:"aa.GTO", layerName:"Top", layerType:"Paste"},
-            {fileName:"aa.GTS", layerName:"Top", layerType:"Stencil"},
-            {fileName:"aa.GML", layerName:"All", layerType:"Drill"}
-        ]}/>
+        <App key="app"/>,
     ],
     document.getElementById("example")
 );
