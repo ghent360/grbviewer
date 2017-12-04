@@ -26,7 +26,7 @@ export class LayerList extends React.Component<LayerListProps, {}> {
         return <ReactTable.default
             data={this.props.layers}
             columns={LayerList.Columns}
-            className="-striped"
+            defaultPageSize={-1}
             showPagination={false} />;
     }
 }
