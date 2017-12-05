@@ -13,7 +13,8 @@ class GerberFile {
         public boardSide:BoardSide,
         public boardLayer:BoardLayer,
         public status:string,
-        public content?:string) {}
+        public content?:string,
+        public svg?:string) {}
 
     get layerName() {
         return BoardSide[this.boardSide];
@@ -29,6 +30,8 @@ class GerberViewerState {
 }
 
 export class GerberViewer extends React.Component<GerberViewerProps, GerberViewerState> {
+    private static toSvgUrl = "https://6jmlrbilid.execute-api.us-east-1.amazonaws.com/prod";
+
     constructor(props:GerberViewerProps, context?:any) {
         super(props, context);
         this.state = { fileList:[] };
@@ -37,41 +40,39 @@ export class GerberViewer extends React.Component<GerberViewerProps, GerberViewe
         }
     }
 
-    shouldComponentUpdate(
-        nextProps:Readonly<GerberViewerProps>,
-        nextState:Readonly<GerberViewerState>):boolean {
-        if (nextState !== this.state) {
-            return true;
-        }
-        if (nextProps.file !== this.props.file) {
-            this.readFile(nextProps.file);
-            return true;
-        }
-        return false;
+    gerberToSvg(fileName:string, content:string) {
+        let myHeaders = new Headers({
+            "Content-Type": "text/plain",
+            "X-Api-Key": "W3taPLShAb8jgGl6LfitO4PkumriMv6K1h9Z0JjJ"
+        });
+        let myInit:RequestInit = {
+            method: 'POST',
+            body: content,
+            mode: "cors",
+            headers: myHeaders
+        };
+        let request = new Request(GerberViewer.toSvgUrl, myInit);
+        fetch(request)
+            .then((response) => response.text())
+            .then((responseText) => this.receiveSvg(fileName, responseText))
+            .catch((error) => console.log(`ToSVG error: ${error}`));
     }
 
-    readFile(file:File):void {
-        let reader = new FileReader();
-        reader.onload = (e:ProgressEvent) => {
-            this.processFile(reader.result);
-        };
-        reader.onerror = (e:ErrorEvent) => {
-            console.log("Error " + e.error);
-        }
-        reader.readAsArrayBuffer(file);
-    }
-    
-    updateFile(fileName:string, content:string) {
-        let fileList = this.state.fileList.slice();
+    receiveSvg(fileName:string, svg:string) {
         let newFileList = [];
-        for (let gerberFile of fileList) {
+        let status = "done";
+        if (!svg.startsWith("<svg")) {
+            status = "error";
+        }
+        for (let gerberFile of this.state.fileList) {
             if (gerberFile.fileName === fileName) {
                 let newGerberFile = new GerberFile(
                     gerberFile.fileName,
                     gerberFile.boardSide,
                     gerberFile.boardLayer,
-                    "done",
-                    content);
+                    status,
+                    gerberFile.content,
+                    svg);
                 newFileList.push(newGerberFile);
             } else {
                 newFileList.push(gerberFile);
@@ -80,7 +81,43 @@ export class GerberViewer extends React.Component<GerberViewerProps, GerberViewe
         this.setState({fileList:newFileList});
     }
 
-    processFile(stream:ArrayBuffer):void {
+    componentWillReceiveProps(nextProps:Readonly<GerberViewerProps>) {
+        if (nextProps.file !== this.props.file) {
+            this.readFile(nextProps.file);
+        }
+    }
+
+    readFile(file:File):void {
+        let reader = new FileReader();
+        reader.onload = (e:ProgressEvent) => {
+            this.processGerberFile(reader.result);
+        };
+        reader.onerror = (e:ErrorEvent) => {
+            console.log("Error " + e.error);
+        }
+        reader.readAsArrayBuffer(file);
+    }
+    
+    receiveFileContent(fileName:string, content:string) {
+        let newFileList = [];
+        for (let gerberFile of this.state.fileList) {
+            if (gerberFile.fileName === fileName) {
+                let newGerberFile = new GerberFile(
+                    gerberFile.fileName,
+                    gerberFile.boardSide,
+                    gerberFile.boardLayer,
+                    "Rendering",
+                    content);
+                newFileList.push(newGerberFile);
+                this.gerberToSvg(fileName, content);
+            } else {
+                newFileList.push(gerberFile);
+            }
+        }
+        this.setState({fileList:newFileList});
+    }
+
+    processGerberFile(stream:ArrayBuffer):void {
         new JSZip().loadAsync(stream).then(
             zip => {
                 let fileList:Array<GerberFile> = [];
@@ -93,7 +130,7 @@ export class GerberViewer extends React.Component<GerberViewerProps, GerberViewe
                     }
                     fileList.push(new GerberFile(fileName, fileInfo.side, fileInfo.layer, "Processing"));
                     zip.files[fileName].async("text").then(
-                        (content) => this.updateFile(fileName, content)
+                        (content) => this.receiveFileContent(fileName, content)
                     );
                     console.log(`File '${fileName}' side: ${BoardSide[fileInfo.side]} layer: ${BoardLayer[fileInfo.layer]}`);
                 }
