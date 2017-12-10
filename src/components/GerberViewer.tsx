@@ -1,8 +1,8 @@
 import * as React from "react";
 import * as JSZip from "jszip";
-import * as pako from "pako";
 import {BoardLayer, BoardSide, GerberUtils} from "../GerberUtils";
 import {LayerList} from "./LayerList";
+import {SVGConverter} from "grbparser/converters";
 
 export interface GerberViewerProps { 
     file: File;
@@ -31,7 +31,7 @@ class GerberViewerState {
 }
 
 export class GerberViewer extends React.Component<GerberViewerProps, GerberViewerState> {
-    private static toSvgUrl = "http://localhost:3000/tosvg";
+    //private gerberParser = new AsyncGerberParser();
 
     constructor(props:GerberViewerProps, context?:any) {
         super(props, context);
@@ -42,36 +42,15 @@ export class GerberViewer extends React.Component<GerberViewerProps, GerberViewe
     }
 
     gerberToSvg(fileName:string, content:string) {
-        let myHeaders = new Headers({
-            "Content-Type": "text/plain",
-            "Content-Encoding": "gzip",
-            //"X-Api-Key": "W3taPLShAb8jgGl6LfitO4PkumriMv6K1h9Z0JjJ"
+        SVGConverter.WaitInit(() => {
+            let svg = SVGConverter.GerberToSvg(content);
+            this.receiveSvg(fileName, svg);
         });
-        let compressedGerber = new Buffer(pako.gzip(content)).toString('base64');
-        console.log(`Gerber ${fileName} size ${compressedGerber.length}`);
-        let myInit:RequestInit = {
-            method: 'POST',
-            body: compressedGerber,
-            mode: "cors",
-            headers: myHeaders
-        };
-        let request = new Request(GerberViewer.toSvgUrl, myInit);
-        fetch(request)
-            .then((response) => {
-                if (response.ok) {
-                    return response.text()
-                        .then((responseText) => this.receiveSvg(fileName, responseText));
-                }
-                console.log(`error: ${response}`);
-            })
-            .catch((error) => console.log(`ToSVG error: ${error}`));
     }
 
-    receiveSvg(fileName:string, svgEncoded:string) {
+    receiveSvg(fileName:string, svg:string) {
         let newFileList = [];
         let status = "done";
-        let bfr = Buffer.from(svgEncoded, 'base64');
-        let svg = pako.ungzip(bfr, {to:'string'});
         if (!svg.startsWith("<?xml")) {
             status = "error";
         }
