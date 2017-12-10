@@ -1,5 +1,6 @@
 import * as React from "react";
-import * as JSZip from 'jszip';
+import * as JSZip from "jszip";
+import * as pako from "pako";
 import {BoardLayer, BoardSide, GerberUtils} from "../GerberUtils";
 import {LayerList} from "./LayerList";
 
@@ -30,7 +31,7 @@ class GerberViewerState {
 }
 
 export class GerberViewer extends React.Component<GerberViewerProps, GerberViewerState> {
-    private static toSvgUrl = "https://6jmlrbilid.execute-api.us-east-1.amazonaws.com/prod";
+    private static toSvgUrl = "http://localhost:3000/tosvg";
 
     constructor(props:GerberViewerProps, context?:any) {
         super(props, context);
@@ -43,25 +44,35 @@ export class GerberViewer extends React.Component<GerberViewerProps, GerberViewe
     gerberToSvg(fileName:string, content:string) {
         let myHeaders = new Headers({
             "Content-Type": "text/plain",
-            "X-Api-Key": "W3taPLShAb8jgGl6LfitO4PkumriMv6K1h9Z0JjJ"
+            "Content-Encoding": "gzip",
+            //"X-Api-Key": "W3taPLShAb8jgGl6LfitO4PkumriMv6K1h9Z0JjJ"
         });
+        let compressedGerber = new Buffer(pako.gzip(content)).toString('base64');
+        console.log(`Gerber ${fileName} size ${compressedGerber.length}`);
         let myInit:RequestInit = {
             method: 'POST',
-            body: content,
+            body: compressedGerber,
             mode: "cors",
             headers: myHeaders
         };
         let request = new Request(GerberViewer.toSvgUrl, myInit);
         fetch(request)
-            .then((response) => response.text())
-            .then((responseText) => this.receiveSvg(fileName, responseText))
+            .then((response) => {
+                if (response.ok) {
+                    return response.text()
+                        .then((responseText) => this.receiveSvg(fileName, responseText));
+                }
+                console.log(`error: ${response}`);
+            })
             .catch((error) => console.log(`ToSVG error: ${error}`));
     }
 
-    receiveSvg(fileName:string, svg:string) {
+    receiveSvg(fileName:string, svgEncoded:string) {
         let newFileList = [];
         let status = "done";
-        if (!svg.startsWith("<svg")) {
+        let bfr = Buffer.from(svgEncoded, 'base64');
+        let svg = pako.ungzip(bfr, {to:'string'});
+        if (!svg.startsWith("<?xml")) {
             status = "error";
         }
         for (let gerberFile of this.state.fileList) {
@@ -132,7 +143,7 @@ export class GerberViewer extends React.Component<GerberViewerProps, GerberViewe
                     zip.files[fileName].async("text").then(
                         (content) => this.receiveFileContent(fileName, content)
                     );
-                    console.log(`File '${fileName}' side: ${BoardSide[fileInfo.side]} layer: ${BoardLayer[fileInfo.layer]}`);
+                    //console.log(`File '${fileName}' side: ${BoardSide[fileInfo.side]} layer: ${BoardLayer[fileInfo.layer]}`);
                 }
                 this.setState({fileList:fileList});
             });
