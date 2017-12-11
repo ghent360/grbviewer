@@ -4,9 +4,12 @@ import * as ReactDOM from "react-dom";
 import {Hello} from "./components/Hello";
 import {GerberViewer} from "./components/GerberViewer";
 import {FileOpenButton} from "./components/FileOpenButton";
+import {SvgViewer} from "./components/SvgViewer";
+import {ObjectConverter} from "../../grbparser/converters";
 
 class AppState {
     file:File;
+    selectedGerber?:ObjectConverter
 }
 
 class App extends React.Component<{}, AppState> {
@@ -19,17 +22,31 @@ class App extends React.Component<{}, AppState> {
         this.setState({file:file});
     }
 
+    onSelectGerber(gerber:ObjectConverter) {
+        console.log(`Selected new gerber ${gerber.solids.length} solids`);
+        this.setState({selectedGerber:gerber});
+    }
+
     render() {
         return <div>
             <FileOpenButton key="fileInput" onChange={(f) => this.handleChangeFile(f)} accept=".zip"/>,
-            <GerberViewer key="gerberViewer" file={this.state.file}/>
+            <GerberViewer 
+                key="gerberViewer"
+                file={this.state.file}
+                onSelect={(gerber) => this.onSelectGerber(gerber)}/>
+            <SvgViewer
+                key="svg"
+                layerColor={0xa02010}
+                scale={100}
+                margin={10}
+                objects={this.state.selectedGerber}/>
         </div>;
     }
 }
 
 ReactDOM.render(
     [
-        <Hello key="tst" compiler="TypeScript" framework="React" />,
+        //<Hello key="tst" compiler="TypeScript" framework="React" />,
         <App key="app"/>,
     ],
     document.getElementById("example")

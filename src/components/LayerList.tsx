@@ -13,6 +13,7 @@ export interface LayerInfo {
 
 export interface LayerListProps { 
     layers:Array<LayerInfo>;
+    onClick?:(fileName:string) => void;
 }
 
 export class LayerList extends React.Component<LayerListProps, {}> {
@@ -27,8 +28,20 @@ export class LayerList extends React.Component<LayerListProps, {}> {
     render() {
         return <ReactTable.default
             data={this.props.layers}
+            noDataText=""
             columns={LayerList.Columns}
             defaultPageSize={-1}
+            getTrProps={
+                (state:any, rowInfo:ReactTable.RowInfo) => {
+                return {
+                    onClick: (e:any) => {
+                        let row = this.props.layers[rowInfo.index];
+                        if (this.props.onClick) {
+                            this.props.onClick(row.fileName);
+                        }
+                    }
+                }
+            }}
             showPagination={false} />;
     }
 }

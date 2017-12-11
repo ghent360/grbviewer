@@ -2,10 +2,11 @@ import * as React from "react";
 import * as JSZip from "jszip";
 import {BoardLayer, BoardSide, GerberUtils} from "../GerberUtils";
 import {LayerList} from "./LayerList";
-import {SVGConverter} from "grbparser/converters";
+import {ObjectConverter, Init} from "grbparser/converters";
 
 export interface GerberViewerProps { 
     file: File;
+    onSelect?: (gerber:ObjectConverter) => void;
 }
 
 class GerberFile {
@@ -15,7 +16,7 @@ class GerberFile {
         public boardLayer:BoardLayer,
         public status:string,
         public content?:string,
-        public svg?:string) {}
+        public svg?:ObjectConverter) {}
 
     get layerName() {
         return BoardSide[this.boardSide];
@@ -42,18 +43,19 @@ export class GerberViewer extends React.Component<GerberViewerProps, GerberViewe
     }
 
     gerberToSvg(fileName:string, content:string) {
-        SVGConverter.WaitInit(() => {
-            let svg = SVGConverter.GerberToSvg(content);
-            this.receiveSvg(fileName, svg);
+        Init.then(() => {
+            try {
+                let svg = ObjectConverter.GerberToObjects(content);
+                this.receiveSvg(fileName, svg);
+            } catch (e) {
+                this.receiveSvg(fileName, undefined);
+            }
         });
     }
 
-    receiveSvg(fileName:string, svg:string) {
+    receiveSvg(fileName:string, svg?:ObjectConverter) {
         let newFileList = [];
-        let status = "done";
-        if (!svg.startsWith("<?xml")) {
-            status = "error";
-        }
+        let status = (svg) ? "done" : "error";
         for (let gerberFile of this.state.fileList) {
             if (gerberFile.fileName === fileName) {
                 let newGerberFile = new GerberFile(
@@ -87,7 +89,7 @@ export class GerberViewer extends React.Component<GerberViewerProps, GerberViewe
         }
         reader.readAsArrayBuffer(file);
     }
-    
+
     receiveFileContent(fileName:string, content:string) {
         let newFileList = [];
         for (let gerberFile of this.state.fileList) {
@@ -127,8 +129,21 @@ export class GerberViewer extends React.Component<GerberViewerProps, GerberViewe
                 this.setState({fileList:fileList});
             });
     }
-        
+
+    onClick(fileName:string) {
+        let idx = this.state.fileList.findIndex(gf => gf.fileName === fileName);
+        if (idx >= 0) {
+            let item = this.state.fileList[idx];
+            if (item.svg && this.props.onSelect) {
+                this.props.onSelect(item.svg);
+            }
+        }
+    }
+
     render() {
-        return <LayerList key="layerList" layers={this.state.fileList}/>
+        return <LayerList
+            key="layerList"
+            layers={this.state.fileList}
+            onClick={(fileName) => this.onClick(fileName)}/>
     }
 }
