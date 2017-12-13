@@ -1,10 +1,10 @@
 import * as React from "react";
-import {ObjectConverter} from "grbparser/converters";
+import {PolygonConverter} from "grbparser/converters";
 import {Point} from "grbparser/point";
 import {PolygonSet, Polygon} from "grbparser/polygonSet";
 
 export interface SvgViewerProps { 
-    objects?: ObjectConverter;
+    objects?: PolygonConverter;
     scale:number;
     margin:number;
     layerColor:number;

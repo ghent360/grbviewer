@@ -2,11 +2,11 @@ import * as React from "react";
 import * as JSZip from "jszip";
 import {BoardLayer, BoardSide, GerberUtils} from "../GerberUtils";
 import {LayerList} from "./LayerList";
-import {ObjectConverter, Init} from "grbparser/converters";
+import {PolygonConverter, Init} from "grbparser/converters";
 
 export interface GerberViewerProps { 
     file: File;
-    onSelect?: (gerber:ObjectConverter) => void;
+    onSelect?: (gerber:PolygonConverter) => void;
 }
 
 class GerberFile {
@@ -16,7 +16,7 @@ class GerberFile {
         public boardLayer:BoardLayer,
         public status:string,
         public content?:string,
-        public svg?:ObjectConverter) {}
+        public svg?:PolygonConverter) {}
 
     get layerName() {
         return BoardSide[this.boardSide];
@@ -45,7 +45,7 @@ export class GerberViewer extends React.Component<GerberViewerProps, GerberViewe
     gerberToSvg(fileName:string, content:string) {
         Init.then(() => {
             try {
-                let svg = ObjectConverter.GerberToObjects(content);
+                let svg = PolygonConverter.GerberToPolygons(content);
                 this.receiveSvg(fileName, svg);
             } catch (e) {
                 this.receiveSvg(fileName, undefined);
@@ -53,7 +53,7 @@ export class GerberViewer extends React.Component<GerberViewerProps, GerberViewe
         });
     }
 
-    receiveSvg(fileName:string, svg?:ObjectConverter) {
+    receiveSvg(fileName:string, svg?:PolygonConverter) {
         let newFileList = [];
         let status = (svg) ? "done" : "error";
         for (let gerberFile of this.state.fileList) {

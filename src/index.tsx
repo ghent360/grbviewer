@@ -5,11 +5,11 @@ import {Hello} from "./components/Hello";
 import {GerberViewer} from "./components/GerberViewer";
 import {FileOpenButton} from "./components/FileOpenButton";
 import {SvgViewer} from "./components/SvgViewer";
-import {ObjectConverter} from "../../grbparser/converters";
+import {PolygonConverter} from "../../grbparser/converters";
 
 class AppState {
     file:File;
-    selectedGerber?:ObjectConverter
+    selectedGerber?:PolygonConverter
 }
 
 class App extends React.Component<{}, AppState> {
@@ -22,7 +22,7 @@ class App extends React.Component<{}, AppState> {
         this.setState({file:file});
     }
 
-    onSelectGerber(gerber:ObjectConverter) {
+    onSelectGerber(gerber:PolygonConverter) {
         console.log(`Selected new gerber ${gerber.solids.length} solids`);
         this.setState({selectedGerber:gerber});
     }
