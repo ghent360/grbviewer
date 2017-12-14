@@ -156,6 +156,7 @@ export class GerberUtils {
                     break;
                 case "l2":
                 case "gl1":
+                case "g2l":
                     result  = { side:BoardSide.Internal1, layer:BoardLayer.Copper };
                     break;
                 case "adtop":
@@ -169,6 +170,7 @@ export class GerberUtils {
                     break;
                 case "l3":
                 case "gl2":
+                case "g3l":
                     result  = { side:BoardSide.Internal2, layer:BoardLayer.Copper };
                     break;
                 case "l4":

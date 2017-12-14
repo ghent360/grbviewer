@@ -120,7 +120,8 @@ export class SvgViewer extends React.Component<SvgViewerProps, SvgViewerState> {
 
     render() {
         let key=0;
-        let solids:JSX.Element[] = []
+        let solids:JSX.Element[] = [];
+        let thins:JSX.Element[] = [];
         if (this.props.objects) {
             solids = this.props.objects.solids
                 .filter(p => p.length > 1)
@@ -131,12 +132,23 @@ export class SvgViewer extends React.Component<SvgViewerProps, SvgViewerState> {
                         scale={this.props.scale}
                         precision={3}
                         layerColor={this.props.layerColor}
-                        key={key++}/>);
+                        key={"solid" + key++}/>);
+            thins = this.props.objects.thins
+                .filter(p => p.length > 1)
+                .map(polygon =>
+                    <WirePolygon
+                        polygon={polygon}
+                        offset={this.state.offset}
+                        scale={this.props.scale}
+                        precision={3}
+                        layerColor={this.props.layerColor}
+                        key={"thin" + key++}/>);
         }
         return <svg width="100%" height="100%"
                     viewBox={ "0 0 " + this.state.width + " " + this.state.height}
                     version="1.1" xmlns="http://www.w3.org/2000/svg">
                     {solids}
+                    {thins}
                </svg>;
     }
 }

@@ -4,6 +4,7 @@ import * as ReactDOM from "react-dom";
 import {Hello} from "./components/Hello";
 import {GerberViewer} from "./components/GerberViewer";
 import {FileOpenButton} from "./components/FileOpenButton";
+import {CanvasViewer} from "./components/CanvasViewer";
 import {SvgViewer} from "./components/SvgViewer";
 import {PolygonConverter} from "../../grbparser/converters";
 
@@ -29,12 +30,13 @@ class App extends React.Component<{}, AppState> {
 
     render() {
         return <div>
-            <FileOpenButton key="fileInput" onChange={(f) => this.handleChangeFile(f)} accept=".zip"/>,
+            <FileOpenButton key="fileInput" onChange={(f) => this.handleChangeFile(f)} accept=".zip"/>
+            <br/>
             <GerberViewer 
                 key="gerberViewer"
                 file={this.state.file}
                 onSelect={(gerber) => this.onSelectGerber(gerber)}/>
-            <SvgViewer
+            <CanvasViewer
                 key="svg"
                 layerColor={0xa02010}
                 scale={100}
@@ -46,8 +48,8 @@ class App extends React.Component<{}, AppState> {
 
 ReactDOM.render(
     [
-        //<Hello key="tst" compiler="TypeScript" framework="React" />,
-        <App key="app"/>,
+        <Hello key="tst" compiler="TypeScript" framework="React" />,
+        <App key="app"/>
     ],
     document.getElementById("example")
 );

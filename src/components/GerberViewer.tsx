@@ -45,7 +45,7 @@ export class GerberViewer extends React.Component<GerberViewerProps, GerberViewe
     gerberToSvg(fileName:string, content:string) {
         Init.then(() => {
             try {
-                let svg = PolygonConverter.GerberToPolygons(content);
+                let svg = PolygonConverter.GerberToPolygons(content, false);
                 this.receiveSvg(fileName, svg);
             } catch (e) {
                 this.receiveSvg(fileName, undefined);
