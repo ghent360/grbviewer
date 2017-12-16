@@ -24,7 +24,6 @@ class App extends React.Component<{}, AppState> {
     }
 
     onSelectGerber(gerber:PolygonConverter) {
-        console.log(`Selected new gerber ${gerber.solids.length} solids`);
         this.setState({selectedGerber:gerber});
     }
 
@@ -51,5 +50,5 @@ ReactDOM.render(
         <Hello key="tst" compiler="TypeScript" framework="React" />,
         <App key="app"/>
     ],
-    document.getElementById("example")
+    document.getElementById("root")
 );

@@ -17,7 +17,7 @@ interface SvgViewerState {
 }
 
 interface PolygonProps {
-    polygon:Polygon;
+    polygonSet:PolygonSet;
     offset:Point;
     scale:number;
     precision:number;
@@ -37,51 +37,49 @@ function colorToHtml(clr:number):string {
     return ss;
 }
 
-class SolidPolygon extends React.Component<PolygonProps, {}> {
+
+class PolygonBase extends React.Component<PolygonProps, {}> {
     transform(point:Point):Point {
         return point.scale(this.props.scale).add(this.props.offset);
     }
 
-    prepareData() {
-        let start = this.transform(this.props.polygon[0]);
-        let d = [`M ${start.x.toFixed(this.props.precision)} ${start.y.toFixed(this.props.precision)}`];
+    prepareData(closed:boolean):string {
+        let result:Array<String> = [];
+        this.props.polygonSet
+            .filter(p => p.length > 0)
+            .forEach(polygon => {
+            let start = this.transform(polygon[0]);
+            let d = [`M ${start.x.toFixed(this.props.precision)} ${start.y.toFixed(this.props.precision)}`];
 
-        let collector = this.props.polygon.slice(1).map(point => {
-            let graphPoint = this.transform(point);
-            return `L ${graphPoint.x.toFixed(this.props.precision)} ${graphPoint.y.toFixed(this.props.precision)}`;
+            let collector = polygon.slice(1).map(point => {
+                let graphPoint = this.transform(point);
+                return `L ${graphPoint.x.toFixed(this.props.precision)} ${graphPoint.y.toFixed(this.props.precision)}`;
+            });
+            result.push(d.concat(collector).join(' '));
         });
-        return d.concat(collector, "z").join(' ');
+        if (closed) {
+            result.push("z");
+        }
+        return result.join(' ');
     }
+}
 
+class SolidPolygon extends PolygonBase {
     render() {
-        return <path d={this.prepareData()}
+        return <path d={this.prepareData(true)}
                      fill={colorToHtml(this.props.layerColor)}
                      fillOpacity="1"
                      fillRule="nonzero"
                      stroke="black"
-                     strokeOpacity="1"
+                     strokeOpacity="0"
                      strokeWidth="0" />;
     }
 }
 
-class WirePolygon extends React.Component<PolygonProps, {}> {
-    transform(point:Point):Point {
-        return point.scale(this.props.scale).add(this.props.offset);
-    }
-
-    prepareData() {
-        let start = this.transform(this.props.polygon[0]);
-        let d = [`M ${start.x.toFixed(this.props.precision)} ${start.y.toFixed(this.props.precision)}`];
-
-        let collector = this.props.polygon.slice(1).map(point => {
-            let graphPoint = this.transform(point);
-            return `L ${graphPoint.x.toFixed(this.props.precision)} ${graphPoint.y.toFixed(this.props.precision)}`;
-        });
-        return d.concat(collector).join(' ');
-    }
-
+class WirePolygon extends PolygonBase {
     render() {
-        return <path d={this.prepareData()}
+        return <path d={this.prepareData(false)}
+                     fillOpacity="0"
                      stroke={colorToHtml(this.props.layerColor)}
                      strokeWidth="1" />;
     }
@@ -120,35 +118,29 @@ export class SvgViewer extends React.Component<SvgViewerProps, SvgViewerState> {
 
     render() {
         let key=0;
-        let solids:JSX.Element[] = [];
-        let thins:JSX.Element[] = [];
+        let polygons:JSX.Element[] = [];
         if (this.props.objects) {
-            solids = this.props.objects.solids
-                .filter(p => p.length > 1)
-                .map(polygon =>
-                    <SolidPolygon
-                        polygon={polygon}
-                        offset={this.state.offset}
-                        scale={this.props.scale}
-                        precision={3}
-                        layerColor={this.props.layerColor}
-                        key={"solid" + key++}/>);
-            thins = this.props.objects.thins
-                .filter(p => p.length > 1)
-                .map(polygon =>
-                    <WirePolygon
-                        polygon={polygon}
-                        offset={this.state.offset}
-                        scale={this.props.scale}
-                        precision={3}
-                        layerColor={this.props.layerColor}
-                        key={"thin" + key++}/>);
+            polygons = [
+                <SolidPolygon
+                    polygonSet={this.props.objects.solids}
+                    offset={this.state.offset}
+                    scale={this.props.scale}
+                    precision={3}
+                    layerColor={this.props.layerColor}
+                    key={"solid" + key++}/>,
+                <WirePolygon
+                    polygonSet={this.props.objects.thins}
+                    offset={this.state.offset}
+                    scale={this.props.scale}
+                    precision={3}
+                    layerColor={this.props.layerColor}
+                    key={"thin" + key++}/>
+            ];
         }
         return <svg width="100%" height="100%"
                     viewBox={ "0 0 " + this.state.width + " " + this.state.height}
                     version="1.1" xmlns="http://www.w3.org/2000/svg">
-                    {solids}
-                    {thins}
+                    {polygons}
                </svg>;
     }
 }
