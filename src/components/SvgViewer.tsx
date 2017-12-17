@@ -5,7 +5,7 @@ import {PolygonSet, Polygon} from "grbparser/polygonSet";
 
 export interface SvgViewerProps { 
     objects?: PolygonConverter;
-    scale:number;
+    scale?:number;
     margin:number;
     layerColor:number;
 }
@@ -14,6 +14,7 @@ interface SvgViewerState {
     width:number;
     height:number;
     offset?:Point;
+    scale:number;
 }
 
 interface PolygonProps {
@@ -92,21 +93,24 @@ export class SvgViewer extends React.Component<SvgViewerProps, SvgViewerState> {
     }
 
     processProps(props:SvgViewerProps):SvgViewerState {
+        let scale = props.scale ? props.scale : 1000;
         if (props.objects) {
-            let width = props.objects.bounds.width * props.scale + props.margin * 2;
-            let height = props.objects.bounds.height * props.scale + props.margin * 2;
+            let width = props.objects.bounds.width * scale + props.margin * 2;
+            let height = props.objects.bounds.height * scale + props.margin * 2;
             let offset = new Point(
-                -props.objects.bounds.min.x * props.scale  + props.margin,
-                -props.objects.bounds.min.y * props.scale + props.margin);
+                -props.objects.bounds.min.x * scale  + props.margin,
+                -props.objects.bounds.min.y * scale + props.margin);
             return { 
                 width:width,
                 height:height,
                 offset:offset,
+                scale:scale
             };
         }
         return { 
             width:0,
             height:0,
+            scale:scale
         };
     }
 
@@ -124,14 +128,14 @@ export class SvgViewer extends React.Component<SvgViewerProps, SvgViewerState> {
                 <SolidPolygon
                     polygonSet={this.props.objects.solids}
                     offset={this.state.offset}
-                    scale={this.props.scale}
+                    scale={this.state.scale}
                     precision={3}
                     layerColor={this.props.layerColor}
                     key={"solid" + key++}/>,
                 <WirePolygon
                     polygonSet={this.props.objects.thins}
                     offset={this.state.offset}
-                    scale={this.props.scale}
+                    scale={this.state.scale}
                     precision={3}
                     layerColor={this.props.layerColor}
                     key={"thin" + key++}/>

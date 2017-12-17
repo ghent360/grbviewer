@@ -5,7 +5,6 @@ import {PolygonSet, Polygon} from "grbparser/polygonSet";
 
 export interface CanvasViewerProps { 
     objects?: PolygonConverter;
-    scale:number;
     margin:number;
     layerColor:number;
 }

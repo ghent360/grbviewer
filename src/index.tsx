@@ -38,7 +38,6 @@ class App extends React.Component<{}, AppState> {
             <CanvasViewer
                 key="svg"
                 layerColor={0xa02010}
-                scale={100}
                 margin={10}
                 objects={this.state.selectedGerber}/>
         </div>;
