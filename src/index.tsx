@@ -47,7 +47,7 @@ class App extends React.Component<{}, AppState> {
 
 ReactDOM.render(
     [
-        <Hello key="tst" compiler="TypeScript" framework="React" />,
+        //<Hello key="tst" compiler="TypeScript" framework="React" />,
         <App key="app"/>
     ],
     document.getElementById("root")
