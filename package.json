@@ -16,7 +16,7 @@
   "dependencies": {
     "@types/jszip": "^3.1.2",
     "@types/pako": "^1.0.0",
-    "@types/react": "^16.0.28",
+    "@types/react": "^16.0.31",
     "@types/react-data-grid": "^2.0.7",
     "@types/react-dom": "^16.0.3",
     "@types/react-table": "^6.7.0",
@@ -24,7 +24,7 @@
     "pako": "^1.0.6",
     "react": "^16.2.0",
     "react-dom": "^16.2.0",
-    "react-table": "^6.7.4",
+    "react-table": "^6.7.5",
     "svg.js": "^2.6.3"
   },
   "devDependencies": {
@@ -33,9 +33,9 @@
     "babel-polyfill": "^6.26.0",
     "babel-preset-env": "^1.6.1",
     "css-loader": "^0.28.7",
-    "file-loader": "^1.1.5",
+    "file-loader": "^1.1.6",
     "source-map-loader": "^0.2.3",
-    "style-loader": "^0.19.0",
+    "style-loader": "^0.19.1",
     "typescript": "^2.6.2",
     "typings-for-css-modules-loader": "^1.7.0",
     "webpack": "^3.9.1",

@@ -1,0 +1,22 @@
+{
+    "compilerOptions": {
+      "outDir": "./dist/",
+      "sourceMap": true,
+      "noImplicitAny": true,
+      "alwaysStrict": true,
+      "strictNullChecks": true,
+      "noEmitOnError": true,
+      "removeComments": false,
+      "module": "commonjs",
+      "target": "es5",
+      "lib": [
+        "webworker",
+        "es5",
+        "scripthost"
+      ]
+    },
+    "exclude": [
+      "node_modules",
+      "wwwroot"
+    ]
+}

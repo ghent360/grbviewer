@@ -1,63 +1,10 @@
-var path = require('path');
+"use strict";
 
-module.exports = {
-    entry: ["babel-polyfill", "./src/index.tsx"],
-    output: {
-        filename: "bundle.js",
-        path: path.resolve(__dirname, 'dist/')
-    },
+let browserConfig = require("./config/webpack.browser.config");
+let workerConfig = require("./config/webpack.workers.config");
 
-    // Enable sourcemaps for debugging webpack's output.
-    devtool: "source-map",
+module.exports = [
+	    browserConfig(),
+	    workerConfig()
+];
 
-    resolve: {
-        // Add '.ts' and '.tsx' as resolvable extensions.
-        extensions: [".ts", ".tsx", ".js", ".json", ".css" ]
-    },
-
-    devServer: {
-        contentBase: __dirname,
-    },
-    module: {
-        rules: [
-            // All files with a '.ts' or '.tsx' extension will be handled by 'awesome-typescript-loader'.
-            { test: /\.tsx?$/, use: [
-                    {
-                        loader: "awesome-typescript-loader",
-                        options: {
-                            configFileName: 'tsconfig.json',
-                            useBabel: true,
-                            babelOptions: {
-                                babelrc: false,
-                                presets: [
-                                    [
-                                        "env", { 
-                                            "targets": "last 2 versions", 
-                                            //"modules": false 
-                                        }
-                                    ]
-                                ]
-                            },
-                            //"babelCore": "@babel/core", // needed for Babel v7
-                        }
-                    }
-                ],
-            },
-
-            // All output '.js' files will have any sourcemaps re-processed by 'source-map-loader'.
-            { enforce: "pre", test: /\.js$/, loader: "source-map-loader" },
-
-            { test: /\.css$/, use: [ 'style-loader', 'css-loader' ] }
-        ]
-    },
-
-    // When importing a module whose path matches one of the following, just
-    // assume a corresponding global variable exists and use that instead.
-    // This is important because it allows us to avoid bundling all of our
-    // dependencies, which allows browsers to cache those libraries between builds.
-    externals: {
-        "react": "React",
-        "react-dom": "ReactDOM",
-        "fs": "fs"
-    },
-};

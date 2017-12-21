@@ -3,6 +3,7 @@ import * as JSZip from "jszip";
 import {BoardLayer, BoardSide, GerberUtils} from "../GerberUtils";
 import {LayerList} from "./LayerList";
 import {PolygonConverter, Init} from "grbparser/converters";
+import * as Async from "../AsyncGerberParser";
 
 export interface GerberViewerProps { 
     file: File;
@@ -43,6 +44,7 @@ export class GerberViewer extends React.Component<GerberViewerProps, GerberViewe
     }
 
     gerberToSvg(fileName:string, content:string) {
+        Async.Test();
         Init.then(() => {
             try {
                 let svg = PolygonConverter.GerberToPolygons(content);

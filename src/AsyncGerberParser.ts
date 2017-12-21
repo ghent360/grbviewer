@@ -1,19 +1,5 @@
-import * as workerPath from "file-loader?name=[name].js!./AsyncGerberParser.worker";
-
-export class WorkerInput<I> {
-    constructor(
-        public id:number,
-        public origin:string,
-        public input:I) {
-    }
-}
-
-export class WorkerResult<O> {
-    constructor(
-        public id:number,
-        public output:O) {
-    }
-}
+const GerberWorker = new Worker("AsyncGerberParser.worker.js");
+import {WorkerInput, WorkerResult} from "./AsyncGerberParserAPI";
 
 class AsyncWorker<I, O> {
     protected worker:Worker;
@@ -42,11 +28,10 @@ class AsyncWorker<I, O> {
     }
 }
 
-export class AsyncGerberParser extends AsyncWorker<string, string> {
-    constructor() {
-        super();
-        console.log(`Worker path ${workerPath}`);
-        this.worker = new Worker(workerPath);
-        this.init();
-    }
+export function Test() {
+    GerberWorker.postMessage({a:1});
 }
+
+GerberWorker.onmessage = (event:any) => {
+    console.log(`Received response ${JSON.stringify(event.data)}`);
+};
