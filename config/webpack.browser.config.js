@@ -33,7 +33,7 @@ module.exports = () => {
                     ],
                     loader: "awesome-typescript-loader",
                     options: {
-                        configFileName: './tsconfig.json',
+                        configFileName: './src/tsconfig.json',
                         useBabel: true,
                         babelOptions: {
                             babelrc: false,

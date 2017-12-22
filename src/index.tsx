@@ -6,7 +6,7 @@ import {GerberViewer} from "./components/GerberViewer";
 import {FileOpenButton} from "./components/FileOpenButton";
 import {CanvasViewer} from "./components/CanvasViewer";
 import {SvgViewer} from "./components/SvgViewer";
-import {PolygonConverter} from "../../grbparser/converters";
+import {PolygonConverter} from "../../grbparser/dist/converters";
 
 class AppState {
     file:File;

@@ -1,7 +1,7 @@
 import * as React from "react";
-import {PolygonConverter} from "grbparser/converters";
-import {Point} from "grbparser/point";
-import {PolygonSet, Polygon} from "grbparser/polygonSet";
+import {PolygonConverter} from "grbparser/dist/converters";
+import {Point} from "grbparser/dist/point";
+import {PolygonSet, Polygon} from "grbparser/dist/polygonSet";
 
 export interface CanvasViewerProps { 
     objects?: PolygonConverter;

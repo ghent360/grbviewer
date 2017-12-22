@@ -2,7 +2,7 @@ import * as React from "react";
 import * as JSZip from "jszip";
 import {BoardLayer, BoardSide, GerberUtils} from "../GerberUtils";
 import {LayerList} from "./LayerList";
-import {PolygonConverter, Init} from "grbparser/converters";
+import {PolygonConverter, Init} from "grbparser/dist/converters";
 import * as Async from "../AsyncGerberParser";
 
 export interface GerberViewerProps { 
