@@ -22,6 +22,10 @@ export class AsyncWorker<I, O> {
         this.worker.postMessage(data);
     }
 
+    public terminate() {
+        this.worker.terminate();
+    }
+
     private processResult(result:WorkerResult<O>) {
         this.workerData[result.id](result.output);
     }

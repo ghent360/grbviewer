@@ -33,7 +33,7 @@ class GerberViewerState {
 }
 
 export class GerberViewer extends React.Component<GerberViewerProps, GerberViewerState> {
-    private gerberParser = new AsyncGerberParserInterface();
+    private gerberParser:AsyncGerberParserInterface;
 
     constructor(props:GerberViewerProps, context?:any) {
         super(props, context);
@@ -91,6 +91,13 @@ export class GerberViewer extends React.Component<GerberViewerProps, GerberViewe
 
     processGerberFile(stream:ArrayBuffer):void {
         this.setState({fileList:[]});
+        if (this.props.onSelect) {
+            this.props.onSelect(undefined);
+        }
+        if (this.gerberParser) {
+            this.gerberParser.terminate();
+        }
+        this.gerberParser = new AsyncGerberParserInterface();
         this.gerberParser.scheduleWork(stream, (output) => this.processGerberOutput(output));
     }
 
