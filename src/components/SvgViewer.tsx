@@ -1,6 +1,5 @@
 import * as React from "react";
 import {PolygonConverter} from "grbparser/dist/converters";
-import {Point} from "grbparser/dist/point";
 import {PolygonSet, Polygon} from "grbparser/dist/polygonSet";
 
 export interface SvgViewerProps { 
@@ -13,13 +12,13 @@ export interface SvgViewerProps {
 interface SvgViewerState { 
     width:number;
     height:number;
-    offset?:Point;
+    offset?:{x:number, y:number};
     scale:number;
 }
 
 interface PolygonProps {
     polygonSet:PolygonSet;
-    offset:Point;
+    offset:{x:number, y:number};
     scale:number;
     precision:number;
     layerColor:number;
@@ -40,8 +39,11 @@ function colorToHtml(clr:number):string {
 
 
 class PolygonBase extends React.Component<PolygonProps, {}> {
-    transform(point:Point):Point {
-        return point.scale(this.props.scale).add(this.props.offset);
+    transform(point:{x:number, y:number}):{x:number, y:number} {
+        return {
+            x:point.x * this.props.scale + this.props.offset.x,
+            y:point.y * this.props.scale + this.props.offset.y
+        };
     }
 
     prepareData(closed:boolean):string {
@@ -49,12 +51,12 @@ class PolygonBase extends React.Component<PolygonProps, {}> {
         this.props.polygonSet
             .filter(p => p.length > 0)
             .forEach(polygon => {
-            let start = this.transform(polygon[0]);
-            let d = [`M ${start.x.toFixed(this.props.precision)} ${start.y.toFixed(this.props.precision)}`];
+                let start = this.transform(polygon[0]);
+                let d = [`M ${start.x.toFixed(this.props.precision)} ${start.y.toFixed(this.props.precision)}`];
 
-            let collector = polygon.slice(1).map(point => {
-                let graphPoint = this.transform(point);
-                return `L ${graphPoint.x.toFixed(this.props.precision)} ${graphPoint.y.toFixed(this.props.precision)}`;
+                let collector = polygon.slice(1).map(point => {
+                    let graphPoint = this.transform(point);
+                    return `L ${graphPoint.x.toFixed(this.props.precision)} ${graphPoint.y.toFixed(this.props.precision)}`;
             });
             result.push(d.concat(collector).join(' '));
         });
@@ -95,11 +97,12 @@ export class SvgViewer extends React.Component<SvgViewerProps, SvgViewerState> {
     processProps(props:SvgViewerProps):SvgViewerState {
         let scale = props.scale ? props.scale : 1000;
         if (props.objects) {
-            let width = props.objects.bounds.width * scale + props.margin * 2;
-            let height = props.objects.bounds.height * scale + props.margin * 2;
-            let offset = new Point(
-                -props.objects.bounds.min.x * scale  + props.margin,
-                -props.objects.bounds.min.y * scale + props.margin);
+            let width = (props.objects.bounds.max.x - props.objects.bounds.min.x) * scale + props.margin * 2;
+            let height = (props.objects.bounds.max.y - props.objects.bounds.min.y) * scale + props.margin * 2;
+            let offset = {
+                x:-props.objects.bounds.min.x * scale  + props.margin,
+                y:-props.objects.bounds.min.y * scale + props.margin
+            };
             return { 
                 width:width,
                 height:height,

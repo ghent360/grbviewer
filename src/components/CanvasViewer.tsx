@@ -48,8 +48,8 @@ export class CanvasViewer extends React.Component<CanvasViewerProps, CanvasViewe
     computeContentSize(props:CanvasViewerProps):ContentSize {
         if (props.objects) {
             return { 
-                contentWidth:props.objects.bounds.width,
-                contentHeight:props.objects.bounds.height,
+                contentWidth:props.objects.bounds.max.x - props.objects.bounds.min.x,
+                contentHeight:props.objects.bounds.max.y - props.objects.bounds.min.y,
             };
         }
         return { 

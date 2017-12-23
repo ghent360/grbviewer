@@ -31,6 +31,7 @@ module.exports = () => {
                     test: /\.ts$/,
                     include: [
                         path.resolve(__dirname, "../workers"),
+                        path.resolve(__dirname, "../common"),
                     ],
                     use: [
                         {
@@ -44,6 +45,9 @@ module.exports = () => {
                 // All output '.js' files will have any sourcemaps re-processed by 'source-map-loader'.
                 { enforce: "pre", test: /\.js$/, loader: "source-map-loader" },
             ]
+        },
+        externals: {
+            "fs": "fs"
         },
     };
 };

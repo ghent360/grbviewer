@@ -1,7 +1,6 @@
-const GerberWorker = new Worker("AsyncGerberParser.worker.js");
-import {WorkerInput, WorkerResult} from "./AsyncGerberParserAPI";
+import {WorkerInput, WorkerResult, GerberParserOutput} from "../common/AsyncGerberParserAPI";
 
-class AsyncWorker<I, O> {
+export class AsyncWorker<I, O> {
     protected worker:Worker;
     private workerData:Array<(output:O) => void> = [];
 
@@ -28,10 +27,10 @@ class AsyncWorker<I, O> {
     }
 }
 
-export function Test() {
-    GerberWorker.postMessage({a:1});
+export class AsyncGerberParserInterface extends AsyncWorker<ArrayBuffer, GerberParserOutput>{
+    constructor() {
+        super();
+        this.worker = new Worker("AsyncGerberParser.worker.js");
+        this.init();
+    }
 }
-
-GerberWorker.onmessage = (event:any) => {
-    console.log(`Received response ${JSON.stringify(event.data)}`);
-};

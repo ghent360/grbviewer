@@ -39,7 +39,6 @@
     "typescript": "^2.6.2",
     "typings-for-css-modules-loader": "^1.7.0",
     "webpack": "^3.9.1",
-    "webpack-dev-server": "^2.9.7",
-    "worker-loader": "^1.1.0"
+    "webpack-dev-server": "^2.9.7"
   }
 }

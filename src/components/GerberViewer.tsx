@@ -1,9 +1,10 @@
 import * as React from "react";
 import * as JSZip from "jszip";
-import {BoardLayer, BoardSide, GerberUtils} from "../GerberUtils";
+import {BoardLayer, BoardSide, GerberUtils} from "../../common/GerberUtils";
 import {LayerList} from "./LayerList";
-import {PolygonConverter, Init} from "grbparser/dist/converters";
-import * as Async from "../AsyncGerberParser";
+import {PolygonConverter} from "grbparser/dist/converters";
+import {AsyncGerberParserInterface} from "../AsyncGerberParser";
+import {GerberParserOutput} from "../../common/AsyncGerberParserAPI";
 
 export interface GerberViewerProps { 
     file: File;
@@ -16,7 +17,6 @@ class GerberFile {
         public boardSide:BoardSide,
         public boardLayer:BoardLayer,
         public status:string,
-        public content?:string,
         public svg?:PolygonConverter) {}
 
     get layerName() {
@@ -33,7 +33,7 @@ class GerberViewerState {
 }
 
 export class GerberViewer extends React.Component<GerberViewerProps, GerberViewerState> {
-    //private gerberParser = new AsyncGerberParser();
+    private gerberParser = new AsyncGerberParserInterface();
 
     constructor(props:GerberViewerProps, context?:any) {
         super(props, context);
@@ -41,38 +41,6 @@ export class GerberViewer extends React.Component<GerberViewerProps, GerberViewe
         if (this.props.file) {
             this.readFile(this.props.file);
         }
-    }
-
-    gerberToSvg(fileName:string, content:string) {
-        Async.Test();
-        Init.then(() => {
-            try {
-                let svg = PolygonConverter.GerberToPolygons(content);
-                this.receiveSvg(fileName, svg);
-            } catch (e) {
-                this.receiveSvg(fileName, undefined);
-            }
-        });
-    }
-
-    receiveSvg(fileName:string, svg?:PolygonConverter) {
-        let newFileList = [];
-        let status = (svg) ? "done" : "error";
-        for (let gerberFile of this.state.fileList) {
-            if (gerberFile.fileName === fileName) {
-                let newGerberFile = new GerberFile(
-                    gerberFile.fileName,
-                    gerberFile.boardSide,
-                    gerberFile.boardLayer,
-                    status,
-                    gerberFile.content,
-                    svg);
-                newFileList.push(newGerberFile);
-            } else {
-                newFileList.push(gerberFile);
-            }
-        }
-        this.setState({fileList:newFileList});
     }
 
     componentWillReceiveProps(nextProps:Readonly<GerberViewerProps>) {
@@ -92,44 +60,38 @@ export class GerberViewer extends React.Component<GerberViewerProps, GerberViewe
         reader.readAsArrayBuffer(file);
     }
 
-    receiveFileContent(fileName:string, content:string) {
+    processGerberOutput(output:GerberParserOutput) {
         let newFileList = [];
+        let handled = false
         for (let gerberFile of this.state.fileList) {
-            if (gerberFile.fileName === fileName) {
+            if (gerberFile.fileName === output.fileName) {
                 let newGerberFile = new GerberFile(
-                    gerberFile.fileName,
-                    gerberFile.boardSide,
-                    gerberFile.boardLayer,
-                    "Rendering",
-                    content);
+                    output.fileName,
+                    output.side ? output.side : gerberFile.boardSide,
+                    output.layer ? output.layer :gerberFile.boardLayer,
+                    output.status,
+                    output.gerber);
                 newFileList.push(newGerberFile);
-                this.gerberToSvg(fileName, content);
+                handled = true;
             } else {
                 newFileList.push(gerberFile);
             }
+        }
+        if (!handled) {
+            let newGerberFile = new GerberFile(
+                output.fileName,
+                output.side,
+                output.layer,
+                output.status,
+                output.gerber);
+            newFileList.push(newGerberFile);
         }
         this.setState({fileList:newFileList});
     }
 
     processGerberFile(stream:ArrayBuffer):void {
-        new JSZip().loadAsync(stream).then(
-            zip => {
-                let fileList:Array<GerberFile> = [];
-                for(let fileName in zip.files) {
-                    let fileInfo = GerberUtils.determineSideAndLayer(fileName);
-                    if (fileInfo.side === BoardSide.Unknown
-                        || fileInfo.layer === BoardLayer.Unknown) {
-                        console.log(`Ignoring ${fileName}`);
-                        continue;
-                    }
-                    fileList.push(new GerberFile(fileName, fileInfo.side, fileInfo.layer, "Processing"));
-                    zip.files[fileName].async("text").then(
-                        (content) => this.receiveFileContent(fileName, content)
-                    );
-                    //console.log(`File '${fileName}' side: ${BoardSide[fileInfo.side]} layer: ${BoardLayer[fileInfo.layer]}`);
-                }
-                this.setState({fileList:fileList});
-            });
+        this.setState({fileList:[]});
+        this.gerberParser.scheduleWork(stream, (output) => this.processGerberOutput(output));
     }
 
     onClick(fileName:string) {

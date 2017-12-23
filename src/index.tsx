@@ -29,7 +29,6 @@ class App extends React.Component<{}, AppState> {
 
     render() {
         return <div>
-            <Hello key="tst" compiler="TypeScript" framework="React" />
             <FileOpenButton key="fileInput" onChange={(f) => this.handleChangeFile(f)} accept=".zip"/>
             <br/>
             <GerberViewer 
