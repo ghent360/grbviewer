@@ -36,7 +36,7 @@ export class FileOpenButton extends React.Component<FileOpenButtonProps, FileOpe
 
     render() {
         return (
-          <div>
+          <div style={this.props.style}>
             <input
                 id={"fileOpen_" + this.props.id}
                 type="file"

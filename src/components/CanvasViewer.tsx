@@ -7,6 +7,7 @@ export interface CanvasViewerProps {
     objects?: PolygonConverter;
     margin:number;
     layerColor:number;
+    style?:React.CSSProperties;
 }
 
 interface ContentSize {
@@ -144,8 +145,6 @@ export class CanvasViewer extends React.Component<CanvasViewerProps, CanvasViewe
     }
 
     render() {
-        return <canvas
-            ref="canvas"
-            style={ { width:"100%", height:"100%" } }/>;
+        return <canvas style={this.props.style} ref="canvas"/>;
     }
 }

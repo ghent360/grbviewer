@@ -8,6 +8,15 @@ import { PassThrough } from "stream";
 
 const ctx: Worker = self as any;
 
+interface ProcessingData {
+    gerber?:any;
+    side?:BoardSide;
+    layer?:BoardLayer;
+    exception?:any;
+    unzipTime?:number;
+    renderTime?:number;
+}
+
 class GerverRenderer {
     private remaining:number = 0;
 
@@ -15,14 +24,19 @@ class GerverRenderer {
         this.processGerberFile();
     }
 
-    gerberToSvg(fileName:string, content:string) {
+    gerberToSvg(fileName:string, content:string, unzipDuration:number) {
         Init.then(() => {
             try {
+                let renderStart = performance.now();
                 let svg = PolygonConverter.GerberToPolygons(content);
-                this.postStatusUpdate(fileName, "done", svg);
+                let renderEnd = performance.now();
+                this.postStatusUpdate(fileName, "done", {
+                    gerber:svg,
+                    unzipTime:unzipDuration,
+                    renderTime:renderEnd - renderStart });
             } catch (e) {
                 console.log(`Exception ${e}`);
-                this.postStatusUpdate(fileName, "error");
+                this.postStatusUpdate(fileName, "error", { exception:e, unzipTime:unzipDuration });
             }
             this.remaining--;
             if (this.remaining <= 0) {
@@ -39,16 +53,18 @@ class GerverRenderer {
                     let fileInfo = GerberUtils.determineSideAndLayer(fileName);
                     if (fileInfo.side === BoardSide.Unknown
                         || fileInfo.layer === BoardLayer.Unknown) {
-                            this.postStatusUpdate(fileName, "Ignored");
+                            this.postStatusUpdate(fileName, "Ignored", {});
                         continue;
                     }
                     this.postStatusUpdate(
-                        fileName, "Processing", undefined, fileInfo.side, fileInfo.layer);
+                        fileName, "Processing", {side:fileInfo.side, layer:fileInfo.layer});
+                    let startUnzip = performance.now();
                     this.remaining++;
                     zip.files[fileName].async("text").then(
                         (content) => {
-                            this.postStatusUpdate(fileName, "Rendering");
-                            this.gerberToSvg(fileName, content);
+                            let endUnzip = performance.now();
+                            this.postStatusUpdate(fileName, "Rendering", {});
+                            this.gerberToSvg(fileName, content, endUnzip - startUnzip);
                         }
                     );
                     //console.log(`File '${fileName}' side: ${BoardSide[fileInfo.side]} layer: ${BoardLayer[fileInfo.layer]}`);
@@ -56,8 +72,16 @@ class GerverRenderer {
             });
     }
 
-    postStatusUpdate(fileName:string, status:string, gerber?:any, side?:BoardSide, layer?:BoardLayer) {
-        let output = new GerberParserOutput(fileName, status, side, layer, gerber);
+    postStatusUpdate(fileName:string, status:string, data:ProcessingData) {
+        let output = new GerberParserOutput(
+            fileName,
+            status,
+            data.side,
+            data.layer,
+            data.gerber,
+            data.exception,
+            data.unzipTime,
+            data.renderTime);
         ctx.postMessage(new WorkerResult<GerberParserOutput>(this.inputData_.id, output));
     }
 }

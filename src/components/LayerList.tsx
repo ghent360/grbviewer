@@ -14,6 +14,7 @@ export interface LayerInfo {
 export interface LayerListProps { 
     layers:Array<LayerInfo>;
     onClick?:(fileName:string) => void;
+    style?:React.CSSProperties;
 }
 
 export class LayerList extends React.Component<LayerListProps, {}> {
@@ -27,6 +28,7 @@ export class LayerList extends React.Component<LayerListProps, {}> {
 
     render() {
         return <ReactTable.default
+            style={this.props.style}
             data={this.props.layers}
             noDataText=""
             columns={LayerList.Columns}

@@ -5,10 +5,12 @@ import {LayerList} from "./LayerList";
 import {PolygonConverter} from "grbparser/dist/converters";
 import {AsyncGerberParserInterface} from "../AsyncGerberParser";
 import {GerberParserOutput} from "../../common/AsyncGerberParserAPI";
+import * as ReactGA from 'react-ga';
 
 export interface GerberViewerProps { 
     file: File;
     onSelect?: (gerber:PolygonConverter) => void;
+    style?: React.CSSProperties;
 }
 
 class GerberFile {
@@ -50,12 +52,17 @@ export class GerberViewer extends React.Component<GerberViewerProps, GerberViewe
     }
 
     readFile(file:File):void {
+        ReactGA.event({ category:'User', action: 'Open a file'});
         let reader = new FileReader();
         reader.onload = (e:ProgressEvent) => {
             this.processGerberFile(reader.result);
         };
         reader.onerror = (e:ErrorEvent) => {
             console.log("Error " + e.error);
+            ReactGA.exception({
+                description: 'Read input file error.',
+                fatal: true
+            });
         }
         reader.readAsArrayBuffer(file);
     }
@@ -86,6 +93,30 @@ export class GerberViewer extends React.Component<GerberViewerProps, GerberViewe
                 output.gerber);
             newFileList.push(newGerberFile);
         }
+        if (output.status === 'error') {
+            ReactGA.exception({
+                description: `Rendering error: ${output.exception.toString()}`,
+                fatal: true
+            });
+        } else if (output.status === 'done') {
+            ReactGA.event({ category:'User', action: 'render gerber', label:output.fileName});
+        }
+        if (output.unzipTime) {
+            ReactGA.timing({
+                category: 'Processing',
+                variable: 'unzip',
+                value: output.unzipTime, // in milliseconds
+                label: 'JSZip'
+            });
+        }
+        if (output.renderTime) {
+            ReactGA.timing({
+                category: 'Processing',
+                variable: 'render',
+                value: output.renderTime, // in milliseconds
+                label: 'grbparser'
+            });
+        }
         this.setState({fileList:newFileList});
     }
 
@@ -113,6 +144,7 @@ export class GerberViewer extends React.Component<GerberViewerProps, GerberViewe
 
     render() {
         return <LayerList
+            style={this.props.style}
             key="layerList"
             layers={this.state.fileList}
             onClick={(fileName) => this.onClick(fileName)}/>

@@ -21,6 +21,9 @@ export class GerberParserOutput {
         readonly status:string,
         readonly side?:BoardSide,
         readonly layer?:BoardLayer,
-        readonly gerber?:any) {
+        readonly gerber?:any,
+        readonly exception?:any,
+        readonly unzipTime?:number,
+        readonly renderTime?:number) {
     }
 }
