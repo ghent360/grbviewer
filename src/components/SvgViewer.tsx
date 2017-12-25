@@ -51,15 +51,18 @@ class PolygonBase extends React.Component<PolygonProps, {}> {
         this.props.polygonSet
             .filter(p => p.length > 0)
             .forEach(polygon => {
-                let start = this.transform(polygon[0]);
+                let start = this.transform({x:polygon[0], y:polygon[1]});
                 let d = [`M ${start.x.toFixed(this.props.precision)} ${start.y.toFixed(this.props.precision)}`];
 
-                let collector = polygon.slice(1).map(point => {
-                    let graphPoint = this.transform(point);
-                    return `L ${graphPoint.x.toFixed(this.props.precision)} ${graphPoint.y.toFixed(this.props.precision)}`;
+                let collector:Array<string> = [];
+                for (let idx = 2; idx < polygon.length; idx += 2) {
+                    let graphPoint = this.transform({x:polygon[idx], y:polygon[idx + 1]});
+                    collector.push(
+                        `L ${graphPoint.x.toFixed(this.props.precision)}`,
+                        ` ${graphPoint.y.toFixed(this.props.precision)}`);
+                }
+                result.push(d.concat(collector).join(' '));
             });
-            result.push(d.concat(collector).join(' '));
-        });
         if (closed) {
             result.push("z");
         }

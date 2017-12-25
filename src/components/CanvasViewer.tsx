@@ -117,7 +117,7 @@ export class CanvasViewer extends React.Component<CanvasViewerProps, CanvasViewe
             context.beginPath();
             this.props.objects.solids
                 .filter(p => p.length > 1)
-                .forEach(p => this.drawSolidPolygon(p, context));
+                .forEach(p => this.drawPolygon(p, context));
             context.closePath();
             context.fill();
             context.strokeStyle = colorToHtml(this.props.layerColor);
@@ -126,7 +126,7 @@ export class CanvasViewer extends React.Component<CanvasViewerProps, CanvasViewe
             context.beginPath();
             this.props.objects.thins
                 .filter(p => p.length > 1)
-                .forEach(p => this.drawWirePolygon(p, context));
+                .forEach(p => this.drawPolygon(p, context));
             context.stroke();
             context.restore();
         } else {
@@ -134,14 +134,11 @@ export class CanvasViewer extends React.Component<CanvasViewerProps, CanvasViewe
         }
     }
 
-    drawSolidPolygon(polygon:Polygon, context:CanvasRenderingContext2D) {
-        context.moveTo(polygon[0].x, polygon[0].y);
-        polygon.slice(1).forEach(p => context.lineTo(p.x, p.y));
-    }
-
-    drawWirePolygon(polygon:Polygon, context:CanvasRenderingContext2D) {
-        context.moveTo(polygon[0].x, polygon[0].y);
-        polygon.slice(1).forEach(p => context.lineTo(p.x, p.y));
+    drawPolygon(polygon:Polygon, context:CanvasRenderingContext2D) {
+        context.moveTo(polygon[0], polygon[1]);
+        for (let idx = 2; idx < polygon.length; idx += 2) {
+            context.lineTo(polygon[idx], polygon[idx + 1]);
+        }
     }
 
     render() {
