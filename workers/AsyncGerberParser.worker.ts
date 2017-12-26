@@ -30,7 +30,13 @@ class GerverRenderer {
                 let renderStart = performance.now();
                 let svg = PolygonConverter.GerberToPolygons(content);
                 let renderEnd = performance.now();
-                this.postStatusUpdate(fileName, "done", {
+                let status = 'done';
+                if ((svg.solids.length == 0 
+                     && svg.thins.length == 0)
+                    || svg.bounds == undefined) {
+                    status = 'empty';
+                }
+                this.postStatusUpdate(fileName, status, {
                     gerber:svg,
                     unzipTime:unzipDuration,
                     renderTime:renderEnd - renderStart });

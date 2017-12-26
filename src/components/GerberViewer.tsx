@@ -136,7 +136,7 @@ export class GerberViewer extends React.Component<GerberViewerProps, GerberViewe
         let idx = this.state.fileList.findIndex(gf => gf.fileName === fileName);
         if (idx >= 0) {
             let item = this.state.fileList[idx];
-            if (item.svg && this.props.onSelect) {
+            if (item.svg && item.svg.bounds && this.props.onSelect) {
                 this.props.onSelect(item.svg);
             }
         }

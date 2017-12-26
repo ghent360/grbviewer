@@ -18,7 +18,7 @@ class App extends React.Component<{}, AppState> {
     constructor(props:{}, context?:any) {
         super(props, context);
         this.state = { file:null };
-        ReactGA.initialize('UA-111584522-1', {debug: true});
+        ReactGA.initialize('UA-111584522-1', {debug: false});
         ReactGA.pageview(window.location.pathname + window.location.search);
     }
 
@@ -31,20 +31,17 @@ class App extends React.Component<{}, AppState> {
     }
 
     render() {
-        return <div style={{height:"100%", display:"flex", flexFlow:"column"}}>
+        return <div style={{height:"100%"}}>
             <FileOpenButton 
-                style={{flex:"0 1 auto"}}
                 key="fileInput" 
                 onChange={(f) => this.handleChangeFile(f)}
                 accept=".zip"/>
             <GerberViewer
-                style={{flex:"0 1 auto"}}
                 key="gerberViewer"
                 file={this.state.file}
                 onSelect={(gerber) => this.onSelectGerber(gerber)}/>
             <CanvasViewer
                 key="svg"
-                style={{flex:"1 1 auto"}}
                 layerColor={0xa02010}
                 margin={10}
                 objects={this.state.selectedGerber}/>
