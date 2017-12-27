@@ -42,6 +42,7 @@ class App extends React.Component<{}, AppState> {
                 onSelect={(gerber) => this.onSelectGerber(gerber)}/>
             <CanvasViewer
                 key="svg"
+                style={{width:'100%', height:'100%'}}
                 layerColor={0xa02010}
                 margin={10}
                 objects={this.state.selectedGerber}/>
