@@ -5,7 +5,8 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "webpack-dev-server --inline --content-base ."
+    "start": "webpack-dev-server --inline --content-base .",
+    "dist": "webpack && npx uglify-es -c -m <dist/AsyncGerberParser.worker.js -o dist/AsyncGerberParser.worker.min.js && npx uglify-es -c -m <dist/bundle.js -o dist/bundle.js.tmp && sed 's/\\.worker\\.js/.worker.min.js/' <dist/bundle.js.tmp >dist/bundle.min.js && rm dist/bundle.js.tmp"
   },
   "keywords": [
     "gerber"

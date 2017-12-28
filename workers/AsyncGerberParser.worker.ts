@@ -41,12 +41,15 @@ class GerverRenderer {
                     unzipTime:unzipDuration,
                     renderTime:renderEnd - renderStart });
             } catch (e) {
-                console.log(`Exception ${e}`);
-                this.postStatusUpdate(fileName, "error", { exception:e, unzipTime:unzipDuration });
+                //console.log(`Exception ${e}`);
+                this.postStatusUpdate(fileName, "error", {
+                    exception:e.toString(),
+                    unzipTime:unzipDuration
+                });
             }
             this.remaining--;
             if (this.remaining <= 0) {
-                console.log('Terminating worker...');
+                //console.log('Terminating worker...');
                 //close();
             }
         });

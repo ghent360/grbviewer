@@ -94,8 +94,9 @@ export class GerberViewer extends React.Component<GerberViewerProps, GerberViewe
             newFileList.push(newGerberFile);
         }
         if (output.status === 'error') {
+            console.log(`Reporting error ${output.exception}`);
             ReactGA.exception({
-                description: `Rendering error: ${output.exception.toString()}`,
+                description: `Rendering error: ${output.exception}`,
                 fatal: true
             });
         } else if (output.status === 'done') {

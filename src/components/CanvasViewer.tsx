@@ -82,7 +82,7 @@ export class CanvasViewer extends React.Component<CanvasViewerProps, CanvasViewe
 
     handleResize(evt:any) {
         let canvas = this.refs.canvas as HTMLCanvasElement;
-        console.log(`Canvas size ${canvas.clientWidth}x${canvas.clientHeight}`);
+        //console.log(`Canvas size ${canvas.clientWidth}x${canvas.clientHeight}`);
         let width = canvas.clientWidth * this.state.pixelRatio;
         let height = canvas.clientHeight * this.state.pixelRatio;
         canvas.width = width;
@@ -113,7 +113,7 @@ export class CanvasViewer extends React.Component<CanvasViewerProps, CanvasViewe
             context.translate(-this.props.objects.bounds.min.x, -this.props.objects.bounds.min.y);
             context.fillStyle = colorToHtml(this.props.layerColor);
             context.lineWidth = 0;
-            console.log(`Drawing ${this.props.objects.solids.length} polys`);
+            //console.log(`Drawing ${this.props.objects.solids.length} polys`);
             context.beginPath();
             this.props.objects.solids
                 .filter(p => p.length > 1)
@@ -122,15 +122,13 @@ export class CanvasViewer extends React.Component<CanvasViewerProps, CanvasViewe
             context.fill();
             context.strokeStyle = colorToHtml(this.props.layerColor);
             context.lineWidth = 1/scale;
-            console.log(`Drawing ${this.props.objects.thins.length} wires`);
+            //console.log(`Drawing ${this.props.objects.thins.length} wires`);
             context.beginPath();
             this.props.objects.thins
                 .filter(p => p.length > 1)
                 .forEach(p => this.drawPolygon(p, context));
             context.stroke();
             context.restore();
-        } else {
-            console.log('not drawing.');
         }
     }
 

@@ -17,7 +17,6 @@ export class AsyncWorker<I, O> {
             origin = window.location.origin;
         }
         let id = this.workerData.length - 1;
-        console.log(`Sheduled work ${id} ${origin}`);
         let data = new WorkerInput<I>(id, origin, input);
         this.worker.postMessage(data);
     }
