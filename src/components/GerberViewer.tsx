@@ -2,14 +2,13 @@ import * as React from "react";
 import * as JSZip from "jszip";
 import {BoardLayer, BoardSide, GerberUtils} from "../../common/GerberUtils";
 import {LayerList} from "./LayerList";
-import {PolygonConverter} from "grbparser/dist/converters";
 import {AsyncGerberParserInterface} from "../AsyncGerberParser";
-import {GerberParserOutput} from "../../common/AsyncGerberParserAPI";
+import {GerberParserOutput, GerberPolygons} from "../../common/AsyncGerberParserAPI";
 import * as ReactGA from 'react-ga';
 
 export interface GerberViewerProps { 
     file: File;
-    onSelect?: (gerber:PolygonConverter) => void;
+    onSelect?: (gerber:GerberPolygons) => void;
     style?: React.CSSProperties;
 }
 
@@ -19,7 +18,7 @@ class GerberFile {
         public boardSide:BoardSide,
         public boardLayer:BoardLayer,
         public status:string,
-        public svg?:PolygonConverter) {}
+        public svg?:GerberPolygons) {}
 
     get layerName() {
         return BoardSide[this.boardSide];

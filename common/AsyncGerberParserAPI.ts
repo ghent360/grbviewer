@@ -15,14 +15,27 @@ export class WorkerResult<O> {
     }
 }
 
+export interface Bounds {
+    readonly minx:number;
+    readonly miny:number;
+    readonly maxx:number;
+    readonly maxy:number;
+}
+
+export interface GerberPolygons {
+    readonly solids: Array<Float64Array>;
+    readonly thins: Array<Float64Array>;
+    readonly bounds: Bounds;
+}
+
 export class GerberParserOutput {
     constructor(
         readonly fileName:string,
         readonly status:string,
         readonly side?:BoardSide,
         readonly layer?:BoardLayer,
-        readonly gerber?:any,
-        readonly exception?:any,
+        readonly gerber?:GerberPolygons,
+        readonly exception?:string,
         readonly unzipTime?:number,
         readonly renderTime?:number) {
     }

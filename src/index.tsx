@@ -6,12 +6,12 @@ import {GerberViewer} from "./components/GerberViewer";
 import {FileOpenButton} from "./components/FileOpenButton";
 import {CanvasViewer} from "./components/CanvasViewer";
 import {SvgViewer} from "./components/SvgViewer";
-import {PolygonConverter} from "../../grbparser/dist/converters";
 import * as ReactGA from 'react-ga';
+import { GerberPolygons } from "../common/AsyncGerberParserAPI";
 
 class AppState {
     file:File;
-    selectedGerber?:PolygonConverter
+    selectedGerber?:GerberPolygons
 }
 
 class App extends React.Component<{}, AppState> {
@@ -26,7 +26,7 @@ class App extends React.Component<{}, AppState> {
         this.setState({file:file});
     }
 
-    onSelectGerber(gerber:PolygonConverter) {
+    onSelectGerber(gerber:GerberPolygons) {
         this.setState({selectedGerber:gerber});
     }
 

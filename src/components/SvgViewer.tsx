@@ -1,9 +1,8 @@
 import * as React from "react";
-import {PolygonConverter} from "grbparser/dist/converters";
-import {PolygonSet, Polygon} from "grbparser/dist/polygonSet";
+import { GerberPolygons } from "../../common/AsyncGerberParserAPI";
 
 export interface SvgViewerProps { 
-    objects?: PolygonConverter;
+    objects?: GerberPolygons;
     scale?:number;
     margin:number;
     layerColor:number;
@@ -17,7 +16,7 @@ interface SvgViewerState {
 }
 
 interface PolygonProps {
-    polygonSet:PolygonSet;
+    polygonSet:Array<Float64Array>;
     offset:{x:number, y:number};
     scale:number;
     precision:number;
@@ -100,11 +99,11 @@ export class SvgViewer extends React.Component<SvgViewerProps, SvgViewerState> {
     processProps(props:SvgViewerProps):SvgViewerState {
         let scale = props.scale ? props.scale : 1000;
         if (props.objects) {
-            let width = (props.objects.bounds.max.x - props.objects.bounds.min.x) * scale + props.margin * 2;
-            let height = (props.objects.bounds.max.y - props.objects.bounds.min.y) * scale + props.margin * 2;
+            let width = (props.objects.bounds.maxx - props.objects.bounds.minx) * scale + props.margin * 2;
+            let height = (props.objects.bounds.maxy - props.objects.bounds.miny) * scale + props.margin * 2;
             let offset = {
-                x:-props.objects.bounds.min.x * scale  + props.margin,
-                y:-props.objects.bounds.min.y * scale + props.margin
+                x:-props.objects.bounds.minx * scale  + props.margin,
+                y:-props.objects.bounds.miny * scale + props.margin
             };
             return { 
                 width:width,

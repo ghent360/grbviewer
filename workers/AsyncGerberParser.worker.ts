@@ -1,4 +1,4 @@
-import {PolygonConverter, Init} from "grbparser/dist/converters";
+import {GerberToPolygons, Init} from "grbparser/dist/converters";
 import {Point} from "grbparser/dist/point";
 import {PolygonSet, Polygon} from "grbparser/dist/polygonSet";
 import * as JSZip from "jszip";
@@ -12,7 +12,7 @@ interface ProcessingData {
     gerber?:any;
     side?:BoardSide;
     layer?:BoardLayer;
-    exception?:any;
+    exception?:string;
     unzipTime?:number;
     renderTime?:number;
 }
@@ -28,16 +28,16 @@ class GerverRenderer {
         Init.then(() => {
             try {
                 let renderStart = performance.now();
-                let svg = PolygonConverter.GerberToPolygons(content);
+                let polygons = GerberToPolygons(content);
                 let renderEnd = performance.now();
                 let status = 'done';
-                if ((svg.solids.length == 0 
-                     && svg.thins.length == 0)
-                    || svg.bounds == undefined) {
+                if ((polygons.solids.length == 0 
+                     && polygons.thins.length == 0)
+                    || polygons.bounds == undefined) {
                     status = 'empty';
                 }
                 this.postStatusUpdate(fileName, status, {
-                    gerber:svg,
+                    gerber:polygons,
                     unzipTime:unzipDuration,
                     renderTime:renderEnd - renderStart });
             } catch (e) {

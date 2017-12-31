@@ -1,10 +1,8 @@
 import * as React from "react";
-import {PolygonConverter} from "grbparser/dist/converters";
-import {Point} from "grbparser/dist/point";
-import {PolygonSet, Polygon} from "grbparser/dist/polygonSet";
+import { GerberPolygons } from "../../common/AsyncGerberParserAPI";
 
 export interface CanvasViewerProps { 
-    objects?: PolygonConverter;
+    objects?: GerberPolygons;
     margin:number;
     layerColor:number;
     style?:React.CSSProperties;
@@ -49,8 +47,8 @@ export class CanvasViewer extends React.Component<CanvasViewerProps, CanvasViewe
     computeContentSize(props:CanvasViewerProps):ContentSize {
         if (props.objects) {
             return { 
-                contentWidth:props.objects.bounds.max.x - props.objects.bounds.min.x,
-                contentHeight:props.objects.bounds.max.y - props.objects.bounds.min.y,
+                contentWidth:props.objects.bounds.maxx - props.objects.bounds.minx,
+                contentHeight:props.objects.bounds.maxy - props.objects.bounds.miny,
             };
         }
         return { 
@@ -103,14 +101,11 @@ export class CanvasViewer extends React.Component<CanvasViewerProps, CanvasViewe
             let scaleX = targetWidth / this.state.contentSize.contentWidth;
             let scaleY = targetHeight / this.state.contentSize.contentHeight;
             let scale = Math.min(scaleX, scaleY);
-            let offset = new Point(
-                -this.props.objects.bounds.min.x * scale  + this.props.margin,
-                -this.props.objects.bounds.min.y * scale + this.props.margin);
             context.save();
             // Flip the Y axis
             context.translate(0, this.state.height);
             context.scale(scale, -scale);
-            context.translate(-this.props.objects.bounds.min.x, -this.props.objects.bounds.min.y);
+            context.translate(-this.props.objects.bounds.minx, -this.props.objects.bounds.miny);
             context.fillStyle = colorToHtml(this.props.layerColor);
             context.lineWidth = 0;
             //console.log(`Drawing ${this.props.objects.solids.length} polys`);
@@ -132,7 +127,7 @@ export class CanvasViewer extends React.Component<CanvasViewerProps, CanvasViewe
         }
     }
 
-    drawPolygon(polygon:Polygon, context:CanvasRenderingContext2D) {
+    drawPolygon(polygon:Float64Array, context:CanvasRenderingContext2D) {
         context.moveTo(polygon[0], polygon[1]);
         for (let idx = 2; idx < polygon.length; idx += 2) {
             context.lineTo(polygon[idx], polygon[idx + 1]);
