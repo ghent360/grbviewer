@@ -9,7 +9,8 @@ export enum BoardLayer {
     Mill,
     Unknown,
     Notes,
-    Assembly
+    Assembly,
+    Mechanical
 }
 
 export enum BoardSide {
@@ -261,6 +262,38 @@ export class GerberUtils {
                 case "spb":
                     result  = { side:BoardSide.Bottom, layer:BoardLayer.Paste };
                     break;
+
+                case "gpb":
+                    result  = { side:BoardSide.Bottom, layer:BoardLayer.Paste };
+                    break;
+
+                case "gpt":
+                    result  = { side:BoardSide.Top, layer:BoardLayer.Paste };
+                    break;
+
+                case "gm1":
+                case "gm2":
+                case "gm3":
+                case "gm4":
+                case "gm5":
+                case "gm6":
+                case "gm7":
+                case "gm8":
+                case "gm9":
+                case "gm10":
+                case "gm11":
+                case "gm12":
+                case "gm13":
+                case "gm14":
+                case "gm15":
+                case "gm16":
+                case "gm17":
+                case "gm18":
+                case "gm19":
+                case "gm20":
+                    result = { side:BoardSide.Both, layer:BoardLayer.Mechanical};
+                    break;
+
                 case "drill_TOP_BOTTOM":
                 case "drl":
                 case "drill":

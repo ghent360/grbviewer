@@ -24,7 +24,7 @@ class GerverRenderer {
         this.processGerberFile();
     }
 
-    gerberToSvg(fileName:string, content:string, unzipDuration:number) {
+    gerberToPolygons(fileName:string, content:string, unzipDuration:number) {
         Init.then(() => {
             try {
                 let renderStart = performance.now();
@@ -59,6 +59,9 @@ class GerverRenderer {
         new JSZip().loadAsync(this.inputData_.input).then(
             zip => {
                 for(let fileName in zip.files) {
+                    if (zip.files[fileName].dir) {
+                        continue;
+                    }
                     let fileInfo = GerberUtils.determineSideAndLayer(fileName);
                     if (fileInfo.side === BoardSide.Unknown
                         || fileInfo.layer === BoardLayer.Unknown) {
@@ -73,7 +76,7 @@ class GerverRenderer {
                         (content) => {
                             let endUnzip = performance.now();
                             this.postStatusUpdate(fileName, "Rendering", {});
-                            this.gerberToSvg(fileName, content, endUnzip - startUnzip);
+                            this.gerberToPolygons(fileName, content, endUnzip - startUnzip);
                         }
                     );
                     //console.log(`File '${fileName}' side: ${BoardSide[fileInfo.side]} layer: ${BoardLayer[fileInfo.layer]}`);
