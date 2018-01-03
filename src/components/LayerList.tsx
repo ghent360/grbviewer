@@ -30,7 +30,7 @@ export class LayerList extends React.Component<LayerListProps, {}> {
         return <ReactTable.default
             style={this.props.style}
             data={this.props.layers}
-            noDataText=""
+            noDataText="No gerber data found"
             columns={LayerList.Columns}
             defaultPageSize={-1}
             getTrProps={

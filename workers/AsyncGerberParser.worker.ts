@@ -4,7 +4,7 @@ import {PolygonSet, Polygon} from "grbparser/dist/polygonSet";
 import * as JSZip from "jszip";
 import {BoardLayer, BoardSide, GerberUtils} from "../common/GerberUtils";
 import {WorkerInput, GerberParserOutput, WorkerResult} from "../common/AsyncGerberParserAPI";
-import { PassThrough } from "stream";
+import {Build} from "../common/build";
 
 const ctx: Worker = self as any;
 
@@ -62,10 +62,16 @@ class GerverRenderer {
                     if (zip.files[fileName].dir) {
                         continue;
                     }
+                    if (fileName.substr(-9) == '.DS_Store') {
+	                    continue;
+	                }
+	                if (fileName.substr(0, 8) == '__MACOSX') {
+	                    continue;
+	                }
                     let fileInfo = GerberUtils.determineSideAndLayer(fileName);
                     if (fileInfo.side === BoardSide.Unknown
                         || fileInfo.layer === BoardLayer.Unknown) {
-                            this.postStatusUpdate(fileName, "Ignored", {});
+                        //this.postStatusUpdate(fileName, "Ignored", {});
                         continue;
                     }
                     this.postStatusUpdate(
@@ -103,3 +109,5 @@ ctx.addEventListener("message", (e:MessageEvent) => {
     let data = e.data as WorkerInput<ArrayBuffer>;
     const renderer = new GerverRenderer(data);
 });
+
+console.log(`GerberView WK build ${Build}`);

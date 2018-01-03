@@ -7,7 +7,8 @@ import {FileOpenButton} from "./components/FileOpenButton";
 import {CanvasViewer} from "./components/CanvasViewer";
 import {SvgViewer} from "./components/SvgViewer";
 import * as ReactGA from 'react-ga';
-import { GerberPolygons } from "../common/AsyncGerberParserAPI";
+import {GerberPolygons} from "../common/AsyncGerberParserAPI";
+import {Build} from "../common/build";
 
 class AppState {
     file:File;
@@ -54,3 +55,5 @@ ReactDOM.render(
     <App/>,
     document.getElementById("root")
 );
+
+console.log(`GerberView UI build ${Build}`);
