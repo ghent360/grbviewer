@@ -1,8 +1,8 @@
 import * as React from "react";
-import { GerberPolygons } from "../../common/AsyncGerberParserAPI";
+import { GerberPolygons, Bounds } from "../../common/AsyncGerberParserAPI";
 
 export interface SvgViewerProps { 
-    objects?: GerberPolygons;
+    objects?: Array<GerberPolygons>;
     scale?:number;
     margin:number;
     layerColor:number;
@@ -90,6 +90,25 @@ class WirePolygon extends PolygonBase {
     }
 }
 
+function calcBounds(objects:Array<GerberPolygons>):Bounds {
+    let result:{minx:number, miny:number, maxx:number, maxy:number} = objects[0].bounds;
+    objects.slice(1).forEach(o => {
+        if (o.bounds.minx < result.minx) {
+            result.minx = o.bounds.minx;
+        }
+        if (o.bounds.miny < result.miny) {
+            result.miny = o.bounds.miny;
+        }
+        if (o.bounds.maxx > result.maxx) {
+            result.maxx = o.bounds.maxx;
+        }
+        if (o.bounds.maxy > result.maxy) {
+            result.maxy = o.bounds.maxy;
+        }
+    });
+    return result;
+}
+
 export class SvgViewer extends React.Component<SvgViewerProps, SvgViewerState> {
     constructor(props:SvgViewerProps, context?:any) {
         super(props, context);
@@ -98,12 +117,13 @@ export class SvgViewer extends React.Component<SvgViewerProps, SvgViewerState> {
 
     processProps(props:SvgViewerProps):SvgViewerState {
         let scale = props.scale ? props.scale : 1000;
-        if (props.objects) {
-            let width = (props.objects.bounds.maxx - props.objects.bounds.minx) * scale + props.margin * 2;
-            let height = (props.objects.bounds.maxy - props.objects.bounds.miny) * scale + props.margin * 2;
+        if (props.objects && props.objects.length > 0) {
+            let bounds = calcBounds(props.objects);
+            let width = (bounds.maxx - bounds.minx) * scale + props.margin * 2;
+            let height = (bounds.maxy - bounds.miny) * scale + props.margin * 2;
             let offset = {
-                x:-props.objects.bounds.minx * scale  + props.margin,
-                y:-props.objects.bounds.miny * scale + props.margin
+                x:-bounds.minx * scale + props.margin,
+                y:-bounds.miny * scale + props.margin
             };
             return { 
                 width:width,
@@ -120,31 +140,31 @@ export class SvgViewer extends React.Component<SvgViewerProps, SvgViewerState> {
     }
 
     componentWillReceiveProps(nextProps:Readonly<SvgViewerProps>) {
-        if (nextProps.objects != this.props.objects) {
-            this.setState(this.processProps(nextProps));
-        }
+        this.setState(this.processProps(nextProps));
     }
 
     render() {
         let key=0;
         let polygons:JSX.Element[] = [];
         if (this.props.objects) {
-            polygons = [
-                <SolidPolygon
-                    polygonSet={this.props.objects.solids}
-                    offset={this.state.offset}
-                    scale={this.state.scale}
-                    precision={3}
-                    layerColor={this.props.layerColor}
-                    key={"solid" + key++}/>,
-                <WirePolygon
-                    polygonSet={this.props.objects.thins}
-                    offset={this.state.offset}
-                    scale={this.state.scale}
-                    precision={3}
-                    layerColor={this.props.layerColor}
-                    key={"thin" + key++}/>
-            ];
+            this.props.objects.forEach( o => {
+                polygons.push(
+                    <SolidPolygon
+                        polygonSet={o.solids}
+                        offset={this.state.offset}
+                        scale={this.state.scale}
+                        precision={3}
+                        layerColor={this.props.layerColor}
+                        key={"solid" + key++}/>,
+                    <WirePolygon
+                        polygonSet={o.thins}
+                        offset={this.state.offset}
+                        scale={this.state.scale}
+                        precision={3}
+                        layerColor={this.props.layerColor}
+                        key={"thin" + key++}/>
+                );
+            });
         }
         return <svg width="100%" height="100%"
                     viewBox={ "0 0 " + this.state.width + " " + this.state.height}

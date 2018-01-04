@@ -12,13 +12,13 @@ import {Build} from "../common/build";
 
 class AppState {
     file:File;
-    selectedGerber?:GerberPolygons
+    selectedGerbers:Array<GerberPolygons>
 }
 
 class App extends React.Component<{}, AppState> {
     constructor(props:{}, context?:any) {
         super(props, context);
-        this.state = { file:null };
+        this.state = { file:null, selectedGerbers:[] };
         ReactGA.initialize('UA-111584522-1', {debug: false});
         ReactGA.pageview(window.location.pathname + window.location.search);
     }
@@ -28,7 +28,17 @@ class App extends React.Component<{}, AppState> {
     }
 
     onSelectGerber(gerber:GerberPolygons) {
-        this.setState({selectedGerber:gerber});
+        if (!gerber) {
+            return;
+        }
+        let selectedGerbers = this.state.selectedGerbers;
+        let idx = selectedGerbers.indexOf(gerber);
+        if (idx >= 0) {
+            selectedGerbers.splice(idx, 1);
+        } else {
+            selectedGerbers.push(gerber);
+        }
+        this.setState({selectedGerbers:selectedGerbers});
     }
 
     render() {
@@ -46,7 +56,7 @@ class App extends React.Component<{}, AppState> {
                 style={{width:'100%', height:'100%'}}
                 layerColor={0xa02010}
                 margin={10}
-                objects={this.state.selectedGerber}/>
+                objects={this.state.selectedGerbers}/>
         </div>;
     }
 }
