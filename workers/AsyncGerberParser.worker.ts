@@ -1,8 +1,8 @@
 import {GerberToPolygons, Init} from "grbparser/dist/converters";
 import {Point} from "grbparser/dist/point";
 import {PolygonSet, Polygon} from "grbparser/dist/polygonSet";
+import {BoardLayer, BoardSide, GerberUtils} from "grbparser/dist/gerberutils";
 import * as JSZip from "jszip";
-import {BoardLayer, BoardSide, GerberUtils} from "../common/GerberUtils";
 import {WorkerInput, GerberParserOutput, WorkerResult} from "../common/AsyncGerberParserAPI";
 import {Build} from "../common/build";
 
@@ -62,18 +62,19 @@ class GerverRenderer {
                     if (zip.files[fileName].dir) {
                         continue;
                     }
-                    if (fileName.substr(-9) == '.DS_Store') {
-	                    continue;
-	                }
-	                if (fileName.substr(0, 8) == '__MACOSX') {
-	                    continue;
-	                }
-                    let fileInfo = GerberUtils.determineSideAndLayer(fileName);
-                    if (fileInfo.side === BoardSide.Unknown
-                        || fileInfo.layer === BoardLayer.Unknown) {
-                        //this.postStatusUpdate(fileName, "Ignored", {});
+                    if (fileName.endsWith('.DS_Store')
+                        || fileName.toLowerCase().endsWith('.drl')
+                        || fileName.toLowerCase().endsWith('.drill')) {
                         continue;
                     }
+                    if (fileName.indexOf('__MACOSX') >= 0) {
+                        continue;
+                    }
+                    let fileExt = GerberUtils.getFileExt(fileName.toLowerCase());
+                    if (GerberUtils.bannedExtensions.indexOf(fileExt) >= 0) {
+                        continue;
+                    }
+                    let fileInfo = GerberUtils.determineSideAndLayer(fileName);
                     this.postStatusUpdate(
                         fileName, "Processing", {side:fileInfo.side, layer:fileInfo.layer});
                     let startUnzip = performance.now();

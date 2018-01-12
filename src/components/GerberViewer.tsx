@@ -1,6 +1,6 @@
 import * as React from "react";
 import * as JSZip from "jszip";
-import {BoardLayer, BoardSide, GerberUtils} from "../../common/GerberUtils";
+import {BoardLayer, BoardSide, GerberUtils} from "grbparser/dist/gerberutils";
 import {LayerList} from "./LayerList";
 import {AsyncGerberParserInterface} from "../AsyncGerberParser";
 import {GerberParserOutput, GerberPolygons} from "../../common/AsyncGerberParserAPI";

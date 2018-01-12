@@ -1,4 +1,4 @@
-import {BoardSide, BoardLayer} from "./GerberUtils";
+import {BoardSide, BoardLayer} from "grbparser/dist/gerberutils";
 
 export class WorkerInput<I> {
     constructor(

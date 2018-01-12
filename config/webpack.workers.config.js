@@ -38,8 +38,19 @@ module.exports = () => {
                             loader: "awesome-typescript-loader",
                             options: {
                                 configFileName: './workers/tsconfig.json',
+                                useBabel: true,
+                                babelOptions: {
+                                    babelrc: false,
+                                    presets: [
+                                        [
+                                            "env", { 
+                                                "targets": "last 2 versions", 
+                                            }
+                                        ]
+                                    ]
+                                },
                             }
-                        },
+                                },
                     ],
                 },
                 // All output '.js' files will have any sourcemaps re-processed by 'source-map-loader'.
