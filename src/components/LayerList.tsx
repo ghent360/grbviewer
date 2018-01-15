@@ -3,7 +3,7 @@ import * as ReactTable from "react-table";
 import * as FontAwesomeIcon from "@fortawesome/react-fontawesome";
 import * as faSquare from "@fortawesome/fontawesome-free-regular/faSquare";
 import * as faCheckSquare from "@fortawesome/fontawesome-free-regular/faCheckSquare";
-import 'react-table/react-table.css';
+import '../../css/react-table.css';
 import { LayerName } from "./LayerName";
 import { LayerSide } from "./LayerSide";
 import { BoardLayer, BoardSide } from "../../../grbparser/dist/gerberutils";

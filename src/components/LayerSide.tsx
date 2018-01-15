@@ -1,7 +1,7 @@
 import * as React from "react";
 import {BoardLayer, BoardSide} from "grbparser/dist/gerberutils";
 import Dropdown, { Option } from 'react-dropdown';
-import 'react-dropdown/style.css';
+import '../../css/dropdown-style.css';
 
 export interface LayerSideProps { 
     side: BoardSide;
