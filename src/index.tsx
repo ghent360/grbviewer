@@ -2,13 +2,15 @@ import * as React from "react";
 import * as ReactDOM from "react-dom";
 
 import {Hello} from "./components/Hello";
-import {GerberViewer} from "./components/GerberViewer";
+import {LayerViewer} from "./components/LayerViewer";
+import {LayerName} from "./components/LayerName";
 import {FileOpenButton} from "./components/FileOpenButton";
 import {CanvasViewer} from "./components/CanvasViewer";
 import {SvgViewer} from "./components/SvgViewer";
 import * as ReactGA from 'react-ga';
 import {GerberPolygons} from "../common/AsyncGerberParserAPI";
 import {Build} from "../common/build";
+import { BoardLayer } from "../../grbparser/dist/gerberutils";
 
 class AppState {
     file:File;
@@ -47,7 +49,7 @@ class App extends React.Component<{}, AppState> {
                 key="fileInput" 
                 onChange={(f) => this.handleChangeFile(f)}
                 accept=".zip"/>
-            <GerberViewer
+            <LayerViewer
                 key="gerberViewer"
                 file={this.state.file}
                 onSelect={(gerber) => this.onSelectGerber(gerber)}/>

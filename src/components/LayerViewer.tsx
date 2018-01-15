@@ -6,19 +6,21 @@ import {AsyncGerberParserInterface} from "../AsyncGerberParser";
 import {GerberParserOutput, GerberPolygons} from "../../common/AsyncGerberParserAPI";
 import * as ReactGA from 'react-ga';
 
-export interface GerberViewerProps { 
+export interface LayerViewerProps { 
     file: File;
     onSelect?: (gerber:GerberPolygons) => void;
+    onNewFile?: () => void;
     style?: React.CSSProperties;
 }
 
-class GerberFile {
+export class LayerFile {
     constructor(
         public fileName:string,
         public boardSide:BoardSide,
         public boardLayer:BoardLayer,
         public status:string,
-        public svg?:GerberPolygons) {}
+        public polygons:GerberPolygons,
+        public selected:boolean) {}
 
     get layerName() {
         return BoardSide[this.boardSide];
@@ -29,32 +31,32 @@ class GerberFile {
     }
 }
 
-class GerberViewerState {
-    fileList: Array<GerberFile>;
+class LayerViewerState {
+    layerList: Array<LayerFile>;
 }
 
-export class GerberViewer extends React.Component<GerberViewerProps, GerberViewerState> {
+export class LayerViewer extends React.Component<LayerViewerProps, LayerViewerState> {
     private gerberParser:AsyncGerberParserInterface;
 
-    constructor(props:GerberViewerProps, context?:any) {
+    constructor(props:LayerViewerProps, context?:any) {
         super(props, context);
-        this.state = { fileList:[] };
+        this.state = { layerList:[] };
         if (this.props.file) {
-            this.readFile(this.props.file);
+            this.readZipFile(this.props.file);
         }
     }
 
-    componentWillReceiveProps(nextProps:Readonly<GerberViewerProps>) {
+    componentWillReceiveProps(nextProps:Readonly<LayerViewerProps>) {
         if (nextProps.file !== this.props.file) {
-            this.readFile(nextProps.file);
+            this.readZipFile(nextProps.file);
         }
     }
 
-    readFile(file:File):void {
+    readZipFile(file:File):void {
         ReactGA.event({ category:'User', action: 'Open a file'});
         let reader = new FileReader();
         reader.onload = (e:ProgressEvent) => {
-            this.processGerberFile(reader.result);
+            this.processZipFile(reader.result);
         };
         reader.onerror = (e:ErrorEvent) => {
             console.log("Error " + e.error);
@@ -69,14 +71,15 @@ export class GerberViewer extends React.Component<GerberViewerProps, GerberViewe
     processGerberOutput(output:GerberParserOutput) {
         let newFileList = [];
         let handled = false
-        for (let gerberFile of this.state.fileList) {
+        for (let gerberFile of this.state.layerList) {
             if (gerberFile.fileName === output.fileName) {
-                let newGerberFile = new GerberFile(
+                let newGerberFile = new LayerFile(
                     output.fileName,
                     output.side ? output.side : gerberFile.boardSide,
                     output.layer ? output.layer :gerberFile.boardLayer,
                     output.status,
-                    output.gerber);
+                    output.gerber,
+                    false);
                 newFileList.push(newGerberFile);
                 handled = true;
             } else {
@@ -84,12 +87,13 @@ export class GerberViewer extends React.Component<GerberViewerProps, GerberViewe
             }
         }
         if (!handled) {
-            let newGerberFile = new GerberFile(
+            let newGerberFile = new LayerFile(
                 output.fileName,
                 output.side,
                 output.layer,
                 output.status,
-                output.gerber);
+                output.gerber,
+                false);
             newFileList.push(newGerberFile);
         }
         if (output.status === 'error') {
@@ -117,14 +121,15 @@ export class GerberViewer extends React.Component<GerberViewerProps, GerberViewe
                 label: 'grbparser'
             });
         }
-        this.setState({fileList:newFileList});
+        this.setState({layerList:newFileList});
     }
 
-    processGerberFile(stream:ArrayBuffer):void {
-        this.setState({fileList:[]});
-        if (this.props.onSelect) {
-            this.props.onSelect(undefined);
+    processZipFile(stream:ArrayBuffer):void {
+        this.setState({layerList:[]});
+        if (this.props.onNewFile) {
+            this.props.onNewFile();
         }
+        // Kill the old processing thread
         if (this.gerberParser) {
             this.gerberParser.terminate();
         }
@@ -133,20 +138,20 @@ export class GerberViewer extends React.Component<GerberViewerProps, GerberViewe
     }
 
     onClick(fileName:string) {
-        let idx = this.state.fileList.findIndex(gf => gf.fileName === fileName);
-        if (idx >= 0) {
-            let item = this.state.fileList[idx];
-            if (item.svg && item.svg.bounds && this.props.onSelect) {
-                this.props.onSelect(item.svg);
+        let layerList = this.state.layerList.map(l => {
+            if (l.fileName == fileName) {
+                l.selected = !l.selected;
             }
-        }
+            return l;
+        });
+        this.setState({layerList:layerList});
     }
 
     render() {
         return <LayerList
             style={this.props.style}
             key="layerList"
-            layers={this.state.fileList}
+            layers={this.state.layerList}
             onClick={(fileName) => this.onClick(fileName)}/>
     }
 }

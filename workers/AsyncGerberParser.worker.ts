@@ -70,6 +70,7 @@ class GerverRenderer {
                     if (fileName.indexOf('__MACOSX') >= 0) {
                         continue;
                     }
+                    fileName = GerberUtils.getFileName(fileName);
                     let fileExt = GerberUtils.getFileExt(fileName.toLowerCase());
                     if (GerberUtils.bannedExtensions.indexOf(fileExt) >= 0) {
                         continue;
