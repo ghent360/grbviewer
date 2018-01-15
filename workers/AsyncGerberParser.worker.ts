@@ -41,7 +41,7 @@ class GerverRenderer {
                     unzipTime:unzipDuration,
                     renderTime:renderEnd - renderStart });
             } catch (e) {
-                //console.log(`Exception ${e}`);
+                console.log(`Exception processing ${fileName}: ${e}`);
                 this.postStatusUpdate(fileName, "error", {
                     exception:e.toString(),
                     unzipTime:unzipDuration
@@ -73,6 +73,7 @@ class GerverRenderer {
                     fileName = GerberUtils.getFileName(fileName);
                     let fileExt = GerberUtils.getFileExt(fileName.toLowerCase());
                     if (GerberUtils.bannedExtensions.indexOf(fileExt) >= 0) {
+                        console.log(`Ignoring known extension ${fileName}`);
                         continue;
                     }
                     let fileInfo = GerberUtils.determineSideAndLayer(fileName);

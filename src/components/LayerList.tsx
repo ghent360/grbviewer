@@ -44,7 +44,7 @@ export class LayerList extends React.Component<LayerListProps, {}> {
             data={this.props.layers}
             noDataText="No gerber data found"
             columns={LayerList.Columns}
-            defaultPageSize={-1}
+            defaultPageSize={8}
             getTrProps={
                 (state:any, rowInfo:ReactTable.RowInfo) => {
                 return {
@@ -56,6 +56,6 @@ export class LayerList extends React.Component<LayerListProps, {}> {
                     }
                 }
             }}
-            showPagination={false} />;
+            showPagination={true} />;
     }
 }
