@@ -19,6 +19,7 @@ export interface LayerInfo {
     readonly boardSide:BoardSide,
     readonly status:string;
     readonly polygons:GerberPolygons,
+    readonly content:string,
     readonly selected:boolean;
 }
 
@@ -28,6 +29,7 @@ export class LayerFile implements LayerInfo {
         public boardSide:BoardSide,
         public boardLayer:BoardLayer,
         public status:string,
+        public content:string,
         public polygons:GerberPolygons,
         public selected:boolean) {}
 }
@@ -77,6 +79,7 @@ export class LayerViewer extends React.Component<LayerViewerProps, LayerViewerSt
                     gerberFile.boardSide,
                     layer,
                     gerberFile.status,
+                    gerberFile.content,
                     gerberFile.polygons,
                     gerberFile.selected);
             }
@@ -94,6 +97,7 @@ export class LayerViewer extends React.Component<LayerViewerProps, LayerViewerSt
                     side,
                     gerberFile.boardLayer,
                     gerberFile.status,
+                    gerberFile.content,
                     gerberFile.polygons,
                     gerberFile.selected);
             }
@@ -124,8 +128,9 @@ export class LayerViewer extends React.Component<LayerViewerProps, LayerViewerSt
                 let newGerberFile = new LayerFile(
                     output.fileName,
                     output.side ? output.side : gerberFile.boardSide,
-                    output.layer ? output.layer :gerberFile.boardLayer,
+                    output.layer ? output.layer : gerberFile.boardLayer,
                     output.status,
+                    output.content ? output.content : gerberFile.content,
                     output.gerber,
                     false);
                 newFileList.push(newGerberFile);
@@ -140,6 +145,7 @@ export class LayerViewer extends React.Component<LayerViewerProps, LayerViewerSt
                 output.side,
                 output.layer,
                 output.status,
+                output.content,
                 output.gerber,
                 false);
             newFileList.push(newGerberFile);
@@ -192,7 +198,6 @@ export class LayerViewer extends React.Component<LayerViewerProps, LayerViewerSt
             layers={this.state.layerList}
             onClick={(fileName) => this.onClick(fileName)}
             onChangeLayer={(fileName, layer) => this.onChangeLayer(fileName, layer)}
-            onChangeSide={(fileName, side) => this.onChangeSide(fileName, side)}
-            />
+            onChangeSide={(fileName, side) => this.onChangeSide(fileName, side)}/>
     }
 }

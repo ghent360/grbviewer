@@ -1,4 +1,4 @@
-import {GerberToPolygons, Init} from "grbparser/dist/converters";
+import {GerberToPolygons, Init, PolygonConverterResult} from "grbparser/dist/converters";
 import {Point} from "grbparser/dist/point";
 import {PolygonSet, Polygon} from "grbparser/dist/polygonSet";
 import {BoardLayer, BoardSide, GerberUtils} from "grbparser/dist/gerberutils";
@@ -9,7 +9,8 @@ import {Build} from "../common/build";
 const ctx: Worker = self as any;
 
 interface ProcessingData {
-    gerber?:any;
+    gerber?:PolygonConverterResult;
+    content?:string;
     side?:BoardSide;
     layer?:BoardLayer;
     exception?:string;
@@ -17,7 +18,7 @@ interface ProcessingData {
     renderTime?:number;
 }
 
-class GerverRenderer {
+class GerberRenderer {
     private remaining:number = 0;
 
     constructor(private inputData_:WorkerInput<ArrayBuffer>) {
@@ -86,7 +87,7 @@ class GerverRenderer {
                         .async("text")
                         .then( (content) => {
                             let endUnzip = performance.now();
-                            this.postStatusUpdate(fileName, "Rendering", {});
+                            this.postStatusUpdate(fileName, "Rendering", {content:content});
                             this.gerberToPolygons(fileName, content, endUnzip - startUnzip);
                         });
                 }
@@ -99,6 +100,7 @@ class GerverRenderer {
             status,
             data.side,
             data.layer,
+            data.content,
             data.gerber,
             data.exception,
             data.unzipTime,
@@ -110,7 +112,7 @@ class GerverRenderer {
 
 ctx.addEventListener("message", (e:MessageEvent) => {
     let data = e.data as WorkerInput<ArrayBuffer>;
-    const renderer = new GerverRenderer(data);
+    const renderer = new GerberRenderer(data);
 });
 
 console.log(`GerberView WK build ${Build}`);

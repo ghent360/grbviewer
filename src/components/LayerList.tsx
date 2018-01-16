@@ -7,14 +7,7 @@ import '../../css/react-table.css';
 import { LayerName } from "./LayerName";
 import { LayerSide } from "./LayerSide";
 import { BoardLayer, BoardSide } from "../../../grbparser/dist/gerberutils";
-
-export interface LayerInfo {
-    readonly fileName:string;
-    readonly boardLayer:BoardLayer,
-    readonly boardSide:BoardSide,
-    readonly status:string;
-    readonly selected:boolean;
-}
+import { LayerInfo } from "./LayerViewer";
 
 export interface LayerListProps { 
     layers:Array<LayerInfo>;
@@ -57,12 +50,19 @@ export class LayerList extends React.Component<LayerListProps, {}> {
     }
 
     render() {
+        let tableSize =this.props.layers.length;
+        let showPagination = false;
+        if (tableSize == 0 || tableSize > 8) {
+            tableSize = 8;
+            showPagination = true;
+        }
         return <ReactTable.default
             style={this.props.style}
             data={this.props.layers}
             noDataText="No gerber data found"
             columns={this.Columns}
-            defaultPageSize={8}
+            defaultPageSize={tableSize}
+            minRows={tableSize}
             getTdProps={
                 (state:any, rowInfo:ReactTable.RowInfo, column:ReactTable.Column) => {
                 return {
@@ -81,6 +81,6 @@ export class LayerList extends React.Component<LayerListProps, {}> {
                     }
                 }
             }}
-            showPagination={true} />;
+            showPagination={showPagination} />;
     }
 }

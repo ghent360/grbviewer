@@ -34,6 +34,7 @@ export class GerberParserOutput {
         readonly status:string,
         readonly side?:BoardSide,
         readonly layer?:BoardLayer,
+        readonly content?:string,
         readonly gerber?:GerberPolygons,
         readonly exception?:string,
         readonly unzipTime?:number,
