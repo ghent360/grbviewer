@@ -26,7 +26,7 @@ class App extends React.Component<{}, AppState> {
     }
 
     handleChangeFile(file:File) {
-        this.setState({file:file});
+        this.setState({file:file, selection:[]});
     }
 
     onSelectGerber(selection:Array<LayerInfo>) {

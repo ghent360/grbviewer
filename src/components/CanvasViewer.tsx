@@ -1,6 +1,7 @@
 import * as React from "react";
 import { GerberPolygons, Bounds } from "../../common/AsyncGerberParserAPI";
 import { LayerInfo } from "./LayerViewer";
+import { BoardLayer } from "../../../grbparser/dist/gerberutils";
 
 export interface CanvasViewerProps { 
     selection?: Array<LayerInfo>;
@@ -38,6 +39,21 @@ function colorToHtml(clr:number):string {
     return ss;
 }
 
+const layerColors = {
+    0:"#b87333",    // Copper
+    1:"gold",       // SolderMask
+    2:"white",      // Silk
+    3:"silver",     // Paste
+    4:"white",      // Drill
+    5:"black",      // Mill
+    6:"black",      // Outline
+    7:"carbon",     // Carbon
+    8:"green",      // Notes
+    9:"yellow",     // Assembly
+    10:"brown",     // Mechanical
+    11:"black",     // Unknown
+};
+
 export class CanvasViewer extends React.Component<CanvasViewerProps, CanvasViewerState> {
     constructor(props:CanvasViewerProps, context?:any) {
         super(props, context);
@@ -49,7 +65,7 @@ export class CanvasViewer extends React.Component<CanvasViewerProps, CanvasViewe
         }
     }
 
-    calcBounds(selection:Array<LayerInfo>):Bounds {
+    private calcBounds(selection:Array<LayerInfo>):Bounds {
         let result:{minx:number, miny:number, maxx:number, maxy:number} = selection[0].polygons.bounds;
         selection.slice(1).forEach(o => {
             let bounds = o.polygons.bounds;
@@ -119,6 +135,20 @@ export class CanvasViewer extends React.Component<CanvasViewerProps, CanvasViewe
         });
     }
 
+    getSolidColor(layer:BoardLayer) {
+        if (this.props.selection.length == 1) {
+            return colorToHtml(this.props.layerColor);
+        }
+        return layerColors[layer];
+    }
+
+    getBorderColor(layer:BoardLayer) {
+        if (this.props.selection.length == 1) {
+            return colorToHtml(this.props.layerColor);
+        }
+        return layerColors[layer];
+    }
+
     draw() {
         let targetWidth = this.state.width - this.props.margin * 2;
         let targetHeight = this.state.height - this.props.margin * 2;
@@ -138,7 +168,13 @@ export class CanvasViewer extends React.Component<CanvasViewerProps, CanvasViewe
                 }
             }
         }
-        if (this.props.selection && targetWidth > 0 && targetHeight > 0) {
+        let selection = this.props.selection;
+        if (selection.length > 1) {
+            selection.sort((a, b) => a.boardLayer - b.boardLayer);
+            context.fillStyle = '#004400';
+            context.fillRect(this.props.margin, this.props.margin, targetWidth, targetHeight);
+        }
+        if (selection && targetWidth > 0 && targetHeight > 0) {
             let scaleX = targetWidth / this.state.contentSize.contentWidth;
             let scaleY = targetHeight / this.state.contentSize.contentHeight;
             let scale = Math.min(scaleX, scaleY);
@@ -149,9 +185,9 @@ export class CanvasViewer extends React.Component<CanvasViewerProps, CanvasViewe
             context.translate(
                 -this.state.contentSize.contentMinX,
                 -this.state.contentSize.contentMinY);
-            context.fillStyle = colorToHtml(this.props.layerColor);
             context.lineWidth = 0;
-            this.props.selection.forEach(o => {
+            selection.forEach(o => {
+                context.fillStyle = this.getSolidColor(o.boardLayer);
                 context.beginPath();
                 o.polygons.solids
                     .filter(p => p.length > 1)
@@ -159,9 +195,9 @@ export class CanvasViewer extends React.Component<CanvasViewerProps, CanvasViewe
                 context.closePath();
                 context.fill();
             });
-            context.strokeStyle = colorToHtml(this.props.layerColor);
             context.lineWidth = 1/scale;
-            this.props.selection.forEach(o => {
+            selection.forEach(o => {
+                context.strokeStyle = this.getBorderColor(o.boardLayer);
                 context.beginPath();
                 o.polygons.thins
                     .filter(p => p.length > 1)
