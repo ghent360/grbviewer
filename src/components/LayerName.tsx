@@ -5,6 +5,7 @@ import '../../css/dropdown-style.css';
 
 export interface LayerNameProps { 
     layer: BoardLayer;
+    onChange?: (value:BoardLayer) => void
 }
 
 export class LayerName extends React.Component<LayerNameProps, {}> {
@@ -25,6 +26,11 @@ export class LayerName extends React.Component<LayerNameProps, {}> {
     render() {
         return <Dropdown 
             options={this.buildOptions()}
+            onChange={(arg:Option) => {
+                if (this.props.onChange) {
+                    this.props.onChange(Number.parseInt(arg.value));
+                }
+            }}
             value={{value:this.props.layer.toString(), label:BoardLayer[this.props.layer]}}/>;
     }
 }

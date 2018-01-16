@@ -19,39 +19,64 @@ export interface LayerInfo {
 export interface LayerListProps { 
     layers:Array<LayerInfo>;
     onClick?:(fileName:string) => void;
+    onChangeLayer?:(fileName:string, layer:BoardLayer) => void;
+    onChangeSide?:(fileName:string, side:BoardSide) => void;
     style?:React.CSSProperties;
 }
 
 export class LayerList extends React.Component<LayerListProps, {}> {
     private static LeftAlignText = { textAlign:"left" };
-    private static Columns:Array<ReactTable.Column> = [
-        { accessor: 'selected', Header:'', width:25, Cell: row => (
+    private Columns:Array<ReactTable.Column> = [
+        { accessor: 'selected', Header:'', width:25, Cell: row => 
             <FontAwesomeIcon icon={(row.value) ? faCheckSquare : faSquare}/>
-        )},
+        },
         { accessor: 'fileName', Header:'File Name', headerStyle:LayerList.LeftAlignText },
-        { accessor: 'boardLayer', Header:'Layer', headerStyle:LayerList.LeftAlignText, width:150, Cell: row => (
-            <LayerName layer={row.value}/>
-        )},
-        { accessor: 'boardSide', Header:'Side', headerStyle:LayerList.LeftAlignText, width:150, Cell: row => (
-            <LayerSide side={row.value}/>
-        )},
+        { accessor: 'boardLayer', Header:'Layer', headerStyle:LayerList.LeftAlignText, width:150, Cell: row =>
+            <LayerName layer={row.value} onChange={(layer:BoardLayer) => {
+                this.changeLayer(row.row.fileName, layer);
+            }}/>
+        },
+        { accessor: 'boardSide', Header:'Side', headerStyle:LayerList.LeftAlignText, width:150, Cell: row => 
+            <LayerSide side={row.value} onChange={(side:BoardSide) => {
+                this.changeSide(row.row.fileName, side);
+            }}/>
+        },
         { accessor: 'status', Header:'Status', headerStyle:LayerList.LeftAlignText, width:150 },
     ];
+
+    changeLayer(fileName:string, layer:BoardLayer) {
+        if (this.props.onChangeLayer) {
+            this.props.onChangeLayer(fileName, layer);
+        }
+    }
+
+    changeSide(fileName:string, side:BoardSide) {
+        if (this.props.onChangeSide) {
+            this.props.onChangeSide(fileName, side);
+        }
+    }
 
     render() {
         return <ReactTable.default
             style={this.props.style}
             data={this.props.layers}
             noDataText="No gerber data found"
-            columns={LayerList.Columns}
+            columns={this.Columns}
             defaultPageSize={8}
-            getTrProps={
-                (state:any, rowInfo:ReactTable.RowInfo) => {
+            getTdProps={
+                (state:any, rowInfo:ReactTable.RowInfo, column:ReactTable.Column) => {
                 return {
                     onClick: (e:any) => {
-                        let row = this.props.layers[rowInfo.index];
-                        if (this.props.onClick && row.status == 'done') {
-                            this.props.onClick(row.fileName);
+                        if (!rowInfo) {
+                            return;
+                        }
+                        if (column.Header == ""
+                            || column.Header == "File Name"
+                            || column.Header == "Status") {
+                            let row = this.props.layers[rowInfo.index];
+                            if (this.props.onClick && row.status == 'done') {
+                                this.props.onClick(row.fileName);
+                            }
                         }
                     }
                 }

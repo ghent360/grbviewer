@@ -68,6 +68,40 @@ export class LayerViewer extends React.Component<LayerViewerProps, LayerViewerSt
         reader.readAsArrayBuffer(file);
     }
 
+    onChangeLayer(fileName:string, layer:BoardLayer) {
+        let newFileList = this.state.layerList.map(gerberFile => {
+            if (gerberFile.fileName === fileName) {
+                return new LayerFile(
+                    gerberFile.fileName,
+                    gerberFile.boardSide,
+                    layer,
+                    gerberFile.status,
+                    gerberFile.polygons,
+                    gerberFile.selected);
+            }
+            return gerberFile;
+        });
+        ReactGA.event({ category:'User', action: 'change layer', label:fileName, value:layer });
+        this.setState({layerList:newFileList});
+    }
+
+    onChangeSide(fileName:string, side:BoardSide) {
+        let newFileList = this.state.layerList.map(gerberFile => {
+            if (gerberFile.fileName === fileName) {
+                return new LayerFile(
+                    gerberFile.fileName,
+                    side,
+                    gerberFile.boardLayer,
+                    gerberFile.status,
+                    gerberFile.polygons,
+                    gerberFile.selected);
+            }
+            return gerberFile;
+        });
+        ReactGA.event({ category:'User', action: 'change side', label:fileName, value:side });
+        this.setState({layerList:newFileList});
+    }
+
     processGerberOutput(output:GerberParserOutput) {
         let newFileList = [];
         let handled = false
@@ -152,6 +186,9 @@ export class LayerViewer extends React.Component<LayerViewerProps, LayerViewerSt
             style={this.props.style}
             key="layerList"
             layers={this.state.layerList}
-            onClick={(fileName) => this.onClick(fileName)}/>
+            onClick={(fileName) => this.onClick(fileName)}
+            onChangeLayer={(fileName, layer) => this.onChangeLayer(fileName, layer)}
+            onChangeSide={(fileName, side) => this.onChangeSide(fileName, side)}
+            />
     }
 }

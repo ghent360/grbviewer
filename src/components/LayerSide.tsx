@@ -5,6 +5,7 @@ import '../../css/dropdown-style.css';
 
 export interface LayerSideProps { 
     side: BoardSide;
+    onChange?: (value:BoardSide) => void
 }
 
 export class LayerSide extends React.Component<LayerSideProps, {}> {
@@ -25,6 +26,11 @@ export class LayerSide extends React.Component<LayerSideProps, {}> {
     render() {
         return <Dropdown 
             options={this.buildOptions()}
+            onChange={(arg:Option) => {
+                if (this.props.onChange) {
+                    this.props.onChange(Number.parseInt(arg.value));
+                }
+            }}
             value={{value:this.props.side.toString(), label:BoardSide[this.props.side]}}/>;
     }
 }
