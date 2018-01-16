@@ -59,7 +59,8 @@ class GerverRenderer {
         new JSZip().loadAsync(this.inputData_.input).then(
             zip => {
                 for(let fileName in zip.files) {
-                    if (zip.files[fileName].dir) {
+                    let zipObject = zip.files[fileName];
+                    if (zipObject.dir) {
                         continue;
                     }
                     if (fileName.endsWith('.DS_Store')
@@ -81,14 +82,13 @@ class GerverRenderer {
                         fileName, "Processing", {side:fileInfo.side, layer:fileInfo.layer});
                     let startUnzip = performance.now();
                     this.remaining++;
-                    zip.files[fileName].async("text").then(
-                        (content) => {
+                    zipObject
+                        .async("text")
+                        .then( (content) => {
                             let endUnzip = performance.now();
                             this.postStatusUpdate(fileName, "Rendering", {});
                             this.gerberToPolygons(fileName, content, endUnzip - startUnzip);
-                        }
-                    );
-                    //console.log(`File '${fileName}' side: ${BoardSide[fileInfo.side]} layer: ${BoardLayer[fileInfo.layer]}`);
+                        });
                 }
             });
     }

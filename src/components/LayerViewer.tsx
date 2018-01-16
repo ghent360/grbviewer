@@ -8,12 +8,21 @@ import * as ReactGA from 'react-ga';
 
 export interface LayerViewerProps { 
     file: File;
-    onSelect?: (gerber:GerberPolygons) => void;
+    onSelectChange?: (selection:Array<LayerInfo>) => void;
     onNewFile?: () => void;
     style?: React.CSSProperties;
 }
 
-export class LayerFile {
+export interface LayerInfo {
+    readonly fileName:string;
+    readonly boardLayer:BoardLayer,
+    readonly boardSide:BoardSide,
+    readonly status:string;
+    readonly polygons:GerberPolygons,
+    readonly selected:boolean;
+}
+
+export class LayerFile implements LayerInfo {
     constructor(
         public fileName:string,
         public boardSide:BoardSide,
@@ -21,14 +30,6 @@ export class LayerFile {
         public status:string,
         public polygons:GerberPolygons,
         public selected:boolean) {}
-
-    get layerName() {
-        return BoardSide[this.boardSide];
-    }
-
-    get layerType() {
-        return BoardLayer[this.boardLayer];
-    }
 }
 
 class LayerViewerState {
@@ -102,6 +103,19 @@ export class LayerViewer extends React.Component<LayerViewerProps, LayerViewerSt
         this.setState({layerList:newFileList});
     }
 
+    onClick(fileName:string) {
+        let layerList = this.state.layerList.map(l => {
+            if (l.fileName == fileName) {
+                l.selected = !l.selected;
+            }
+            return l;
+        });
+        this.setState({layerList:layerList});
+        if (this.props.onSelectChange) {
+            this.props.onSelectChange(layerList.filter(l => l.selected));
+        }
+    }
+
     processGerberOutput(output:GerberParserOutput) {
         let newFileList = [];
         let handled = false
@@ -169,16 +183,6 @@ export class LayerViewer extends React.Component<LayerViewerProps, LayerViewerSt
         }
         this.gerberParser = new AsyncGerberParserInterface();
         this.gerberParser.scheduleWork(stream, (output) => this.processGerberOutput(output));
-    }
-
-    onClick(fileName:string) {
-        let layerList = this.state.layerList.map(l => {
-            if (l.fileName == fileName) {
-                l.selected = !l.selected;
-            }
-            return l;
-        });
-        this.setState({layerList:layerList});
     }
 
     render() {

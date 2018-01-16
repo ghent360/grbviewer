@@ -1,12 +1,14 @@
 import * as React from "react";
 import { GerberPolygons, Bounds } from "../../common/AsyncGerberParserAPI";
+import { LayerInfo } from "./LayerViewer";
 
 export interface CanvasViewerProps { 
-    objects?: Array<GerberPolygons>;
+    selection?: Array<LayerInfo>;
     margin:number;
     layerColor:number;
     style?:React.CSSProperties;
     blockSize?:number;
+    useCheckeredBackground?:boolean;
 }
 
 interface ContentSize {
@@ -47,29 +49,29 @@ export class CanvasViewer extends React.Component<CanvasViewerProps, CanvasViewe
         }
     }
 
-    calcBounds(objects:Array<GerberPolygons>):Bounds {
-        let result:{minx:number, miny:number, maxx:number, maxy:number} = objects[0].bounds;
-        objects.slice(1).forEach(o => {
-            if (o.bounds.minx < result.minx) {
-                result.minx = o.bounds.minx;
+    calcBounds(selection:Array<LayerInfo>):Bounds {
+        let result:{minx:number, miny:number, maxx:number, maxy:number} = selection[0].polygons.bounds;
+        selection.slice(1).forEach(o => {
+            let bounds = o.polygons.bounds;
+            if (bounds.minx < result.minx) {
+                result.minx = bounds.minx;
             }
-            if (o.bounds.miny < result.miny) {
-                result.miny = o.bounds.miny;
+            if (bounds.miny < result.miny) {
+                result.miny = bounds.miny;
             }
-            if (o.bounds.maxx > result.maxx) {
-                result.maxx = o.bounds.maxx;
+            if (bounds.maxx > result.maxx) {
+                result.maxx = bounds.maxx;
             }
-            if (o.bounds.maxy > result.maxy) {
-                result.maxy = o.bounds.maxy;
+            if (bounds.maxy > result.maxy) {
+                result.maxy = bounds.maxy;
             }
         });
         return result;
     }
 
     computeContentSize(props:CanvasViewerProps):ContentSize {
-        if (props.objects && props.objects.length > 0) {
-            let bounds = this.calcBounds(props.objects);
-            console.log(`${JSON.stringify(bounds)}`);
+        if (props.selection && props.selection.length > 0) {
+            let bounds = this.calcBounds(props.selection);
             return { 
                 contentWidth:bounds.maxx - bounds.minx,
                 contentHeight:bounds.maxy - bounds.miny,
@@ -123,18 +125,20 @@ export class CanvasViewer extends React.Component<CanvasViewerProps, CanvasViewe
         let canvas = this.refs.canvas as HTMLCanvasElement;
         const context = canvas.getContext('2d');
         context.clearRect(0, 0, this.state.width, this.state.height);
-        let blockSize = this.props.blockSize || 10;
-        let numBlocksX = Math.round(this.state.width / blockSize);
-        let numBlocksY = Math.round(this.state.height / blockSize);
-        context.fillStyle = '#d0d0d0';
-        for (let x = 0; x < numBlocksX; x++) {
-            for (let y = 0; y < numBlocksY; y++) {
-                if ((x + y) % 2) {
-                    context.fillRect(x * blockSize, y * blockSize, blockSize, blockSize);
+        if (this.props.useCheckeredBackground) {
+            let blockSize = this.props.blockSize || 10;
+            let numBlocksX = Math.round(this.state.width / blockSize);
+            let numBlocksY = Math.round(this.state.height / blockSize);
+            context.fillStyle = '#d0d0d0';
+            for (let x = 0; x < numBlocksX; x++) {
+                for (let y = 0; y < numBlocksY; y++) {
+                    if ((x + y) % 2) {
+                        context.fillRect(x * blockSize, y * blockSize, blockSize, blockSize);
+                    }
                 }
             }
-        }        
-        if (this.props.objects && targetWidth > 0 && targetHeight > 0) {
+        }
+        if (this.props.selection && targetWidth > 0 && targetHeight > 0) {
             let scaleX = targetWidth / this.state.contentSize.contentWidth;
             let scaleY = targetHeight / this.state.contentSize.contentHeight;
             let scale = Math.min(scaleX, scaleY);
@@ -147,10 +151,9 @@ export class CanvasViewer extends React.Component<CanvasViewerProps, CanvasViewe
                 -this.state.contentSize.contentMinY);
             context.fillStyle = colorToHtml(this.props.layerColor);
             context.lineWidth = 0;
-            //console.log(`Drawing ${this.props.objects.solids.length} polys`);
-            this.props.objects.forEach(o => {
+            this.props.selection.forEach(o => {
                 context.beginPath();
-                o.solids
+                o.polygons.solids
                     .filter(p => p.length > 1)
                     .forEach(p => this.drawPolygon(p, context));
                 context.closePath();
@@ -158,10 +161,9 @@ export class CanvasViewer extends React.Component<CanvasViewerProps, CanvasViewe
             });
             context.strokeStyle = colorToHtml(this.props.layerColor);
             context.lineWidth = 1/scale;
-            //console.log(`Drawing ${this.props.objects.thins.length} wires`);
-            this.props.objects.forEach(o => {
+            this.props.selection.forEach(o => {
                 context.beginPath();
-                o.thins
+                o.polygons.thins
                     .filter(p => p.length > 1)
                     .forEach(p => this.drawPolygon(p, context));
                 context.stroke();

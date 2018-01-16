@@ -2,7 +2,7 @@ import * as React from "react";
 import * as ReactDOM from "react-dom";
 
 import {Hello} from "./components/Hello";
-import {LayerViewer} from "./components/LayerViewer";
+import {LayerViewer, LayerInfo} from "./components/LayerViewer";
 import {LayerName} from "./components/LayerName";
 import {FileOpenButton} from "./components/FileOpenButton";
 import {CanvasViewer} from "./components/CanvasViewer";
@@ -14,13 +14,13 @@ import { BoardLayer } from "../../grbparser/dist/gerberutils";
 
 class AppState {
     file:File;
-    selectedGerbers:Array<GerberPolygons>
+    selection:Array<LayerInfo>
 }
 
 class App extends React.Component<{}, AppState> {
     constructor(props:{}, context?:any) {
         super(props, context);
-        this.state = { file:null, selectedGerbers:[] };
+        this.state = { file:null, selection:[] };
         ReactGA.initialize('UA-111584522-1', {debug: false});
         ReactGA.pageview(window.location.pathname + window.location.search);
     }
@@ -29,18 +29,11 @@ class App extends React.Component<{}, AppState> {
         this.setState({file:file});
     }
 
-    onSelectGerber(gerber:GerberPolygons) {
-        if (!gerber) {
+    onSelectGerber(selection:Array<LayerInfo>) {
+        if (!selection) {
             return;
         }
-        let selectedGerbers = this.state.selectedGerbers;
-        let idx = selectedGerbers.indexOf(gerber);
-        if (idx >= 0) {
-            selectedGerbers.splice(idx, 1);
-        } else {
-            selectedGerbers.push(gerber);
-        }
-        this.setState({selectedGerbers:selectedGerbers});
+        this.setState({selection:selection});
     }
 
     render() {
@@ -52,13 +45,13 @@ class App extends React.Component<{}, AppState> {
             <LayerViewer
                 key="gerberViewer"
                 file={this.state.file}
-                onSelect={(gerber) => this.onSelectGerber(gerber)}/>
+                onSelectChange={(selection) => this.onSelectGerber(selection)}/>
             <CanvasViewer
                 key="svg"
                 style={{width:'100%', height:'100%'}}
                 layerColor={0xa02010}
                 margin={10}
-                objects={this.state.selectedGerbers}/>
+                selection={this.state.selection}/>
         </div>;
     }
 }
