@@ -178,9 +178,13 @@ export class CanvasViewer extends React.Component<CanvasViewerProps, CanvasViewe
             let scaleX = targetWidth / this.state.contentSize.contentWidth;
             let scaleY = targetHeight / this.state.contentSize.contentHeight;
             let scale = Math.min(scaleX, scaleY);
+            let originX = (targetWidth - this.state.contentSize.contentWidth * scale) / 2;
+            let originY = (targetHeight - this.state.contentSize.contentHeight * scale) / 2;
             context.save();
             // Flip the Y axis
-            context.translate(this.props.margin, this.state.height - this.props.margin);
+            context.translate(
+                this.props.margin + originX,
+                this.state.height - this.props.margin - originY);
             context.scale(scale, -scale);
             context.translate(
                 -this.state.contentSize.contentMinX,
