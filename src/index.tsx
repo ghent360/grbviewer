@@ -37,21 +37,36 @@ class App extends React.Component<{}, AppState> {
     }
 
     render() {
-        return <div style={{height:"100%"}}>
+        return <div style={{height:"100%", display:"flex", flexFlow:"column"}}>
+            <h4 style={{color: "coral"}}>
+                This is experimental software. Functionality can change rapidly and without
+                notice. Bugs are very likely. <a href="https://goo.gl/forms/uXouJRtWRVEcTA983">Contact us.</a>
+            </h4>
             <FileOpenButton 
                 key="fileInput" 
                 onChange={(f) => this.handleChangeFile(f)}
                 accept=".zip"/>
-            <LayerViewer
-                key="gerberViewer"
-                file={this.state.file}
-                onSelectChange={(selection) => this.onSelectGerber(selection)}/>
-            <CanvasViewer
-                key="svg"
-                style={{width:'100%', height:'100%'}}
-                layerColor={0xa02010}
-                margin={10}
-                selection={this.state.selection}/>
+            <p></p>
+            <div style={{
+                flex:1,
+                display:"flex",
+                flexFlow:"row",
+                overflow:"hidden"}}>
+                <div style={{order:1, flex:"flex-basis", flexBasis:"auto"}}>
+                    <LayerViewer
+                        key="gerberViewer"
+                        file={this.state.file}
+                        onSelectChange={(selection) => this.onSelectGerber(selection)}/>
+                </div>
+                <div style={{order:2, flex:1, overflow:"hidden"}}>
+                    <CanvasViewer
+                            key="svg"
+                            style={{order:2, width:'100%', height:'100%'}}
+                            layerColor={0xa02010}
+                            margin={10}
+                            selection={this.state.selection}/>
+                </div>
+            </div>
         </div>;
     }
 }

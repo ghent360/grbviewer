@@ -34,7 +34,7 @@ export class LayerList extends React.Component<LayerListProps, {}> {
                 this.changeSide(row.row.fileName, side);
             }}/>
         },
-        { accessor: 'status', Header:'Status', headerStyle:LayerList.LeftAlignText, width:150 },
+        { accessor: 'status', Header:'Status', headerStyle:LayerList.LeftAlignText, width:100 },
     ];
 
     changeLayer(fileName:string, layer:BoardLayer) {
@@ -52,9 +52,9 @@ export class LayerList extends React.Component<LayerListProps, {}> {
     render() {
         let tableSize =this.props.layers.length;
         let showPagination = false;
-        if (tableSize == 0 || tableSize > 8) {
-            tableSize = 8;
-            showPagination = true;
+        if (tableSize == 0 || tableSize > 20) {
+            showPagination = tableSize > 0;
+            tableSize = 20;
         }
         return <ReactTable.default
             style={this.props.style}
