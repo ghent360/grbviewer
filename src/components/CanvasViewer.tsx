@@ -24,6 +24,7 @@ interface CanvasViewerState {
     width:number;
     height:number;
     contentSize:ContentSize;
+    polygonPaths:Map<string, Path2D>;
 }
 
 function toString2(n:number):string {
@@ -61,8 +62,30 @@ export class CanvasViewer extends React.Component<CanvasViewerProps, CanvasViewe
             pixelRatio : window.devicePixelRatio || 1,
             width:0,
             height:0,
-            contentSize:this.computeContentSize(props)
+            contentSize:this.computeContentSize(props),
+            polygonPaths:this.createPaths(props)
         }
+    }
+
+    private createPaths(props:CanvasViewerProps):Map<string, Path2D> {
+        let result:Map<string, Path2D> = new Map();
+        if (props.selection && props.selection.length > 0) {
+            props.selection.forEach(o => {
+                let solidPath = new Path2D();
+                o.polygons.solids
+                    .filter(p => p.length > 1)
+                    .forEach(p => this.drawPolygon(p, solidPath));
+                solidPath.closePath();
+                result.set(o.fileName + ":solid", solidPath);
+                let thinPath = new Path2D();
+                o.polygons.thins
+                    .filter(p => p.length > 1)
+                    .forEach(p => this.drawPolygon(p, thinPath));
+                result.set(o.fileName + ":thin", thinPath);
+            });
+
+        }
+        return result;
     }
 
     private calcBounds(selection:Array<LayerInfo>):Bounds {
@@ -105,7 +128,8 @@ export class CanvasViewer extends React.Component<CanvasViewerProps, CanvasViewe
 
     componentWillReceiveProps(nextProps:Readonly<CanvasViewerProps>) {
         this.setState({
-            contentSize:this.computeContentSize(nextProps)
+            contentSize:this.computeContentSize(nextProps),
+            polygonPaths:this.createPaths(nextProps)
         });
     }
     
@@ -192,27 +216,20 @@ export class CanvasViewer extends React.Component<CanvasViewerProps, CanvasViewe
             context.lineWidth = 0;
             selection.forEach(o => {
                 context.fillStyle = this.getSolidColor(o.boardLayer);
-                context.beginPath();
-                o.polygons.solids
-                    .filter(p => p.length > 1)
-                    .forEach(p => this.drawPolygon(p, context));
-                context.closePath();
-                context.fill();
+                let path:any = this.state.polygonPaths.get(o.fileName + ":solid");
+                context.fill(path);
             });
             context.lineWidth = 1/scale;
             selection.forEach(o => {
                 context.strokeStyle = this.getBorderColor(o.boardLayer);
-                context.beginPath();
-                o.polygons.thins
-                    .filter(p => p.length > 1)
-                    .forEach(p => this.drawPolygon(p, context));
-                context.stroke();
+                let path = this.state.polygonPaths.get(o.fileName + ":thin");
+                context.stroke(path);
             });
             context.restore();
         }
     }
 
-    drawPolygon(polygon:Float64Array, context:CanvasRenderingContext2D) {
+    drawPolygon(polygon:Float64Array, context:CanvasRenderingContext2D|Path2D) {
         context.moveTo(polygon[0], polygon[1]);
         for (let idx = 2; idx < polygon.length; idx += 2) {
             context.lineTo(polygon[idx], polygon[idx + 1]);
