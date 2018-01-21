@@ -25,6 +25,7 @@ interface CanvasViewerState {
     height:number;
     contentSize:ContentSize;
     polygonPaths:Map<string, Path2D>;
+    scale:number;
 }
 
 function toString2(n:number):string {
@@ -63,7 +64,8 @@ export class CanvasViewer extends React.Component<CanvasViewerProps, CanvasViewe
             width:0,
             height:0,
             contentSize:this.computeContentSize(props),
-            polygonPaths:this.createPaths(props)
+            polygonPaths:this.createPaths(props),
+            scale:1,
         }
     }
 
@@ -129,21 +131,42 @@ export class CanvasViewer extends React.Component<CanvasViewerProps, CanvasViewe
     componentWillReceiveProps(nextProps:Readonly<CanvasViewerProps>) {
         this.setState({
             contentSize:this.computeContentSize(nextProps),
-            polygonPaths:this.createPaths(nextProps)
+            polygonPaths:this.createPaths(nextProps),
+            scale:1
         });
     }
     
     componentDidMount() {
         this.handleResize(false);
-        window.addEventListener('resize', this.handleResize.bind(this, false));
+        window.addEventListener('resize', this.handleResize.bind(this));
+        let canvas = this.refs.canvas as HTMLCanvasElement;
+        canvas.addEventListener('wheel', this.handleWheel.bind(this));
+        window.addEventListener('keypress', this.handleKey.bind(this));
     }
 
     componentWillUnmount() {
+        let canvas = this.refs.canvas as HTMLCanvasElement;
+        window.removeEventListener('keypress', this.handleKey);
+        canvas.removeEventListener('wheel', this.handleWheel);
         window.removeEventListener('resize', this.handleResize);
     }
 
     componentDidUpdate() {
         this.draw();
+    }
+
+    handleKey(evt:KeyboardEvent) {
+        if (evt.key == "z") {
+            this.setState({scale:1.0});
+        }
+    }
+
+    handleWheel(evt:WheelEvent) {
+        if (evt.deltaY == 0 || !this.props.selection || this.props.selection.length == 0) {
+            return;
+        }
+        let scale = (evt.deltaY > 0) ? this.state.scale * 1.05 : this.state.scale * 0.95;
+        this.setState({scale: scale});
     }
 
     handleResize(evt:any) {
@@ -209,7 +232,7 @@ export class CanvasViewer extends React.Component<CanvasViewerProps, CanvasViewe
             context.translate(
                 this.props.margin + originX,
                 this.state.height - this.props.margin - originY);
-            context.scale(scale, -scale);
+            context.scale(scale * this.state.scale, -scale * this.state.scale);
             context.translate(
                 -this.state.contentSize.contentMinX,
                 -this.state.contentSize.contentMinY);
