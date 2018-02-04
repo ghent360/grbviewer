@@ -58,15 +58,17 @@ class App extends React.Component<{}, AppState> {
                         file={this.state.file}
                         onSelectChange={(selection) => this.onSelectGerber(selection)}/>
                 </div>
-                <div style={{order:2, flex:1, overflow:"hidden"}}>
+                <div style={{order:2, flex:"flex-basis", width:"10px"}}/>
+                <div style={{order:3, flex:1, overflow:"hidden"}}>
                     <CanvasViewer
                             key="svg"
                             style={{order:2, width:'100%', height:'100%'}}
                             layerColor={0xa02010}
-                            margin={10}
                             selection={this.state.selection}/>
                 </div>
+                <div style={{order:4, flex:"flex-basis", width:"10px"}}/>
             </div>
+            <div style={{flex:"flex-basis", height:"10px"}}/>
         </div>;
     }
 }

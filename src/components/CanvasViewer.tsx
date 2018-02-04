@@ -5,7 +5,6 @@ import { BoardLayer } from "../../../grbparser/dist/gerberutils";
 
 export interface CanvasViewerProps { 
     selection?: Array<LayerInfo>;
-    margin:number;
     layerColor:number;
     style?:React.CSSProperties;
     blockSize?:number;
@@ -26,6 +25,7 @@ interface CanvasViewerState {
     contentSize:ContentSize;
     polygonPaths:Map<string, Path2D>;
     scale:number;
+    cachedImage:ImageBitmap;
 }
 
 function toString2(n:number):string {
@@ -66,6 +66,7 @@ export class CanvasViewer extends React.Component<CanvasViewerProps, CanvasViewe
             contentSize:this.computeContentSize(props),
             polygonPaths:this.createPaths(props),
             scale:1,
+            cachedImage:undefined,
         }
     }
 
@@ -85,7 +86,6 @@ export class CanvasViewer extends React.Component<CanvasViewerProps, CanvasViewe
                     .forEach(p => this.drawPolygon(p, thinPath));
                 result.set(o.fileName + ":thin", thinPath);
             });
-
         }
         return result;
     }
@@ -132,7 +132,8 @@ export class CanvasViewer extends React.Component<CanvasViewerProps, CanvasViewe
         this.setState({
             contentSize:this.computeContentSize(nextProps),
             polygonPaths:this.createPaths(nextProps),
-            scale:1
+            scale:1,
+            cachedImage:undefined,
         });
     }
     
@@ -142,6 +143,7 @@ export class CanvasViewer extends React.Component<CanvasViewerProps, CanvasViewe
         let canvas = this.refs.canvas as HTMLCanvasElement;
         canvas.addEventListener('wheel', this.handleWheel.bind(this));
         window.addEventListener('keypress', this.handleKey.bind(this));
+        this.setState({cachedImage:undefined});
     }
 
     componentWillUnmount() {
@@ -149,6 +151,10 @@ export class CanvasViewer extends React.Component<CanvasViewerProps, CanvasViewe
         window.removeEventListener('keypress', this.handleKey);
         canvas.removeEventListener('wheel', this.handleWheel);
         window.removeEventListener('resize', this.handleResize);
+        if (this.state.cachedImage) {
+            this.state.cachedImage.close();
+        }
+        this.setState({cachedImage:undefined});
     }
 
     componentDidUpdate() {
@@ -179,6 +185,7 @@ export class CanvasViewer extends React.Component<CanvasViewerProps, CanvasViewe
         this.setState({
             width: width,
             height: height,
+            cachedImage:undefined,
         });
     }
 
@@ -196,11 +203,7 @@ export class CanvasViewer extends React.Component<CanvasViewerProps, CanvasViewe
         return layerColors[layer];
     }
 
-    draw() {
-        let targetWidth = this.state.width - this.props.margin * 2;
-        let targetHeight = this.state.height - this.props.margin * 2;
-        let canvas = this.refs.canvas as HTMLCanvasElement;
-        const context = canvas.getContext('2d');
+    clearCanvas(context:CanvasRenderingContext2D) {
         context.clearRect(0, 0, this.state.width, this.state.height);
         if (this.props.useCheckeredBackground) {
             let blockSize = this.props.blockSize || 10;
@@ -215,24 +218,30 @@ export class CanvasViewer extends React.Component<CanvasViewerProps, CanvasViewe
                 }
             }
         }
+    }
+
+    drawOutline(context:CanvasRenderingContext2D) {
+        context.fillStyle = '#004400';
+        context.fillRect(0, 0, this.state.width, this.state.height);
+    }
+
+    drawSelection(context:CanvasRenderingContext2D) {
         let selection = this.props.selection;
+        let width = this.state.width;
+        let height = this.state.height;
         if (selection.length > 1) {
             selection.sort((a, b) => a.boardLayer - b.boardLayer);
-            context.fillStyle = '#004400';
-            context.fillRect(this.props.margin, this.props.margin, targetWidth, targetHeight);
+            this.drawOutline(context);
         }
-        if (selection && targetWidth > 0 && targetHeight > 0) {
-            let scaleX = targetWidth / this.state.contentSize.contentWidth;
-            let scaleY = targetHeight / this.state.contentSize.contentHeight;
+        if (selection && width > 0 && height > 0) {
+            let scaleX = width / this.state.contentSize.contentWidth;
+            let scaleY = height / this.state.contentSize.contentHeight;
             let scale = Math.min(scaleX, scaleY);
-            let originX = (targetWidth - this.state.contentSize.contentWidth * scale) / 2;
-            let originY = (targetHeight - this.state.contentSize.contentHeight * scale) / 2;
-            context.save();
+            let originX = (width - this.state.contentSize.contentWidth * scale) / 2;
+            let originY = (height - this.state.contentSize.contentHeight * scale) / 2;
             // Flip the Y axis
-            context.translate(
-                this.props.margin + originX,
-                this.state.height - this.props.margin - originY);
-            context.scale(scale * this.state.scale, -scale * this.state.scale);
+            context.translate(originX, this.state.height - originY);
+            context.scale(scale, -scale);
             context.translate(
                 -this.state.contentSize.contentMinX,
                 -this.state.contentSize.contentMinY);
@@ -248,8 +257,23 @@ export class CanvasViewer extends React.Component<CanvasViewerProps, CanvasViewe
                 let path = this.state.polygonPaths.get(o.fileName + ":thin");
                 context.stroke(path);
             });
-            context.restore();
         }
+    }
+
+    draw() {
+        let canvas = this.refs.canvas as HTMLCanvasElement;
+        const context = canvas.getContext('2d');
+        this.clearCanvas(context);
+        context.save();
+        context.scale(this.state.scale, this.state.scale);
+        if (!this.state.cachedImage) {
+            this.drawSelection(context);
+            let cachedImage = context.getImageData(0, 0, this.state.width, this.state.height);
+            createImageBitmap(cachedImage).then(bitmap => this.setState({cachedImage:bitmap}));
+        } else {
+            context.drawImage(this.state.cachedImage, 0, 0);
+        }
+        context.restore();
     }
 
     drawPolygon(polygon:Float64Array, context:CanvasRenderingContext2D|Path2D) {
