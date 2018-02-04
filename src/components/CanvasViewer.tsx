@@ -25,7 +25,8 @@ interface CanvasViewerState {
     contentSize:ContentSize;
     polygonPaths:Map<string, Path2D>;
     scale:number;
-    cachedImage:ImageBitmap;
+    offsetX:number;
+    offsetY:number;
 }
 
 function toString2(n:number):string {
@@ -57,6 +58,18 @@ const layerColors = {
 };
 
 export class CanvasViewer extends React.Component<CanvasViewerProps, CanvasViewerState> {
+    private redrawTimer:any;
+    private mouseDnX:number;
+    private mouseDnY:number;
+    private cachedImage:ImageBitmap;
+    private scale:number;
+    private offsetX:number;
+    private offsetY:number;
+    private oldOffsetX:number;
+    private oldOffsetY:number;
+    private startX:number;
+    private startY:number;
+
     constructor(props:CanvasViewerProps, context?:any) {
         super(props, context);
         this.state = {
@@ -66,8 +79,16 @@ export class CanvasViewer extends React.Component<CanvasViewerProps, CanvasViewe
             contentSize:this.computeContentSize(props),
             polygonPaths:this.createPaths(props),
             scale:1,
-            cachedImage:undefined,
+            offsetX:0,
+            offsetY:0,
         }
+        this.scale = 1;
+        this.offsetX = 0;
+        this.offsetY = 0;
+        this.oldOffsetX = 0;
+        this.oldOffsetY = 0;
+        this.startX = 0;
+        this.startY = 0;
     }
 
     private createPaths(props:CanvasViewerProps):Map<string, Path2D> {
@@ -129,11 +150,16 @@ export class CanvasViewer extends React.Component<CanvasViewerProps, CanvasViewe
     }
 
     componentWillReceiveProps(nextProps:Readonly<CanvasViewerProps>) {
+        if (this.cachedImage) {
+            this.cachedImage.close();
+            this.cachedImage = undefined;
+        }
         this.setState({
             contentSize:this.computeContentSize(nextProps),
             polygonPaths:this.createPaths(nextProps),
             scale:1,
-            cachedImage:undefined,
+            offsetX:0,
+            offsetY:0,
         });
     }
     
@@ -143,27 +169,68 @@ export class CanvasViewer extends React.Component<CanvasViewerProps, CanvasViewe
         let canvas = this.refs.canvas as HTMLCanvasElement;
         canvas.addEventListener('wheel', this.handleWheel.bind(this));
         window.addEventListener('keypress', this.handleKey.bind(this));
-        this.setState({cachedImage:undefined});
+        canvas.addEventListener('mousedown', this.handleMouseDn.bind(this));
+        canvas.addEventListener('mousemove', this.handleMouseMove.bind(this));
+        canvas.addEventListener('mouseup', this.handleMouseUp.bind(this));
+        if (this.cachedImage) {
+            this.cachedImage.close();
+            this.cachedImage = undefined;
+        }
     }
 
     componentWillUnmount() {
         let canvas = this.refs.canvas as HTMLCanvasElement;
         window.removeEventListener('keypress', this.handleKey);
         canvas.removeEventListener('wheel', this.handleWheel);
+        canvas.removeEventListener('mousedown', this.handleMouseDn);
+        canvas.removeEventListener('mousemove', this.handleMouseMove);
+        canvas.removeEventListener('mouseup', this.handleMouseUp);
         window.removeEventListener('resize', this.handleResize);
-        if (this.state.cachedImage) {
-            this.state.cachedImage.close();
+        if (this.cachedImage) {
+            this.cachedImage.close();
+            this.cachedImage = undefined;
         }
-        this.setState({cachedImage:undefined});
     }
 
     componentDidUpdate() {
-        this.draw();
+        this.drawFine();
+    }
+
+    handleMouseDn(evt:MouseEvent) {
+        this.mouseDnX = evt.offsetX;
+        this.mouseDnY = evt.offsetY;
+        this.oldOffsetX = this.offsetX;
+        this.oldOffsetY = this.offsetY;
+    }
+
+    handleMouseMove(evt:MouseEvent) {
+        if (evt.buttons != 0 && this.mouseDnX != undefined && this.mouseDnY != undefined) {
+            this.offsetX = this.oldOffsetX + (evt.offsetX - this.mouseDnX) * this.state.pixelRatio;
+            this.offsetY = this.oldOffsetY + (evt.offsetY - this.mouseDnY) * this.state.pixelRatio;
+            //console.log(`Move: ${newOffsetX}, ${newOffsetY}`);
+            this.drawCached();
+        }
+    }
+
+    handleMouseUp(evt:MouseEvent) {
+        this.mouseDnX = undefined;
+        this.mouseDnY = undefined;
     }
 
     handleKey(evt:KeyboardEvent) {
         if (evt.key == "z") {
-            this.setState({scale:1.0});
+            this.scale = 1;
+            this.offsetY = 0;
+            this.offsetY = 0;
+            if (this.cachedImage) {
+                this.cachedImage.close();
+                this.cachedImage = undefined;
+            }
+            this.setState({
+                scale:1.0,
+                offsetX: 0,
+                offsetY: 0
+            });
         }
     }
 
@@ -171,8 +238,8 @@ export class CanvasViewer extends React.Component<CanvasViewerProps, CanvasViewe
         if (evt.deltaY == 0 || !this.props.selection || this.props.selection.length == 0) {
             return;
         }
-        let scale = (evt.deltaY > 0) ? this.state.scale * 1.05 : this.state.scale * 0.95;
-        this.setState({scale: scale});
+        this.scale = (evt.deltaY < 0) ? this.scale * 1.05 : this.scale * 0.95;
+        this.drawCached();
     }
 
     handleResize(evt:any) {
@@ -182,10 +249,13 @@ export class CanvasViewer extends React.Component<CanvasViewerProps, CanvasViewe
         let height = canvas.clientHeight * this.state.pixelRatio;
         canvas.width = width;
         canvas.height = height;
+        if (this.cachedImage) {
+            this.cachedImage.close();
+            this.cachedImage = undefined;
+        }
         this.setState({
             width: width,
             height: height,
-            cachedImage:undefined,
         });
     }
 
@@ -260,20 +330,65 @@ export class CanvasViewer extends React.Component<CanvasViewerProps, CanvasViewe
         }
     }
 
-    draw() {
+    drawFine() {
+        if (this.redrawTimer) {
+            clearTimeout(this.redrawTimer);
+        }
+        this.redrawTimer = undefined;
+        if (this.cachedImage) {
+            this.cachedImage.close();
+            this.cachedImage = undefined;
+        }
         let canvas = this.refs.canvas as HTMLCanvasElement;
         const context = canvas.getContext('2d');
         this.clearCanvas(context);
         context.save();
+        context.translate(this.state.offsetX, this.state.offsetY);
         context.scale(this.state.scale, this.state.scale);
-        if (!this.state.cachedImage) {
-            this.drawSelection(context);
-            let cachedImage = context.getImageData(0, 0, this.state.width, this.state.height);
-            createImageBitmap(cachedImage).then(bitmap => this.setState({cachedImage:bitmap}));
-        } else {
-            context.drawImage(this.state.cachedImage, 0, 0);
-        }
+        this.drawSelection(context);
+        this.startX = Math.max(this.state.offsetX, 0);
+        this.startY = Math.max(this.state.offsetY, 0);
+        //console.log(`Creating image cache ${this.startX}, ${this.startY}`);
+        let cachedImage = context.getImageData(
+            this.startX,
+            this.startY,
+            this.state.width,
+            this.state.height);
+        createImageBitmap(cachedImage).then(bitmap => {
+            this.cachedImage = bitmap;
+        });
+        this.scale = 1.0;
+        this.offsetX = 0;
+        this.offsetY = 0;
         context.restore();
+        //console.log('draw fine');
+    }
+
+    drawCached() {
+        let canvas = this.refs.canvas as HTMLCanvasElement;
+        const context = canvas.getContext('2d');
+        this.clearCanvas(context);
+        if (!this.cachedImage) {
+            console.log("nothing cached");
+        } else {
+            context.save();
+            context.translate(this.offsetX + this.startX, this.offsetY + this.startY);
+            context.scale(this.scale, this.scale);
+            context.drawImage(this.cachedImage, 0, 0);
+            context.restore();
+        }
+        if (this.redrawTimer) {
+            clearTimeout(this.redrawTimer);
+            this.redrawTimer = undefined;
+        }
+        this.redrawTimer = setTimeout(() => {
+                this.setState({
+                    scale:this.state.scale * this.scale,
+                    offsetX:this.state.offsetX + this.offsetX,
+                    offsetY:this.state.offsetY + this.offsetY});
+            },
+            1000);
+        //console.log('draw cached');
     }
 
     drawPolygon(polygon:Float64Array, context:CanvasRenderingContext2D|Path2D) {
