@@ -208,13 +208,14 @@ export class CanvasViewer extends React.Component<CanvasViewerProps, CanvasViewe
             this.offsetX = this.oldOffsetX + (evt.offsetX - this.mouseDnX) * this.state.pixelRatio;
             this.offsetY = this.oldOffsetY + (evt.offsetY - this.mouseDnY) * this.state.pixelRatio;
             //console.log(`Move: ${newOffsetX}, ${newOffsetY}`);
-            this.drawCached();
+            this.drawCached(false);
         }
     }
 
     handleMouseUp(evt:MouseEvent) {
         this.mouseDnX = undefined;
         this.mouseDnY = undefined;
+        this.drawCached(true);
     }
 
     handleKey(evt:KeyboardEvent) {
@@ -239,7 +240,7 @@ export class CanvasViewer extends React.Component<CanvasViewerProps, CanvasViewe
             return;
         }
         this.scale = (evt.deltaY < 0) ? this.scale * 1.05 : this.scale * 0.95;
-        this.drawCached();
+        this.drawCached(true);
     }
 
     handleResize(evt:any) {
@@ -364,7 +365,7 @@ export class CanvasViewer extends React.Component<CanvasViewerProps, CanvasViewe
         //console.log('draw fine');
     }
 
-    drawCached() {
+    drawCached(shouldRedrawFine:boolean) {
         let canvas = this.refs.canvas as HTMLCanvasElement;
         const context = canvas.getContext('2d');
         this.clearCanvas(context);
@@ -381,13 +382,15 @@ export class CanvasViewer extends React.Component<CanvasViewerProps, CanvasViewe
             clearTimeout(this.redrawTimer);
             this.redrawTimer = undefined;
         }
-        this.redrawTimer = setTimeout(() => {
-                this.setState({
-                    scale:this.state.scale * this.scale,
-                    offsetX:this.state.offsetX + this.offsetX,
-                    offsetY:this.state.offsetY + this.offsetY});
-            },
-            1000);
+        if (shouldRedrawFine) {
+            this.redrawTimer = setTimeout(() => {
+                    this.setState({
+                        scale:this.state.scale * this.scale,
+                        offsetX:this.state.offsetX + this.offsetX,
+                        offsetY:this.state.offsetY + this.offsetY});
+                },
+                500);
+        }
         //console.log('draw cached');
     }
 
