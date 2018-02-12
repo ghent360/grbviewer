@@ -67,8 +67,6 @@ export class CanvasViewer extends React.Component<CanvasViewerProps, CanvasViewe
     private offsetY:number;
     private oldOffsetX:number;
     private oldOffsetY:number;
-    private startX:number;
-    private startY:number;
 
     constructor(props:CanvasViewerProps, context?:any) {
         super(props, context);
@@ -87,8 +85,6 @@ export class CanvasViewer extends React.Component<CanvasViewerProps, CanvasViewe
         this.offsetY = 0;
         this.oldOffsetX = 0;
         this.oldOffsetY = 0;
-        this.startX = 0;
-        this.startY = 0;
     }
 
     private createPaths(props:CanvasViewerProps):Map<string, Path2D> {
@@ -205,8 +201,10 @@ export class CanvasViewer extends React.Component<CanvasViewerProps, CanvasViewe
 
     handleMouseMove(evt:MouseEvent) {
         if (evt.buttons != 0 && this.mouseDnX != undefined && this.mouseDnY != undefined) {
-            this.offsetX = this.oldOffsetX + (evt.offsetX - this.mouseDnX) * this.state.pixelRatio;
-            this.offsetY = this.oldOffsetY + (evt.offsetY - this.mouseDnY) * this.state.pixelRatio;
+            let dx = (evt.offsetX - this.mouseDnX) * this.state.pixelRatio;
+            let dy = (evt.offsetY - this.mouseDnY) * this.state.pixelRatio;
+            this.offsetX = this.oldOffsetX + dx;
+            this.offsetY = this.oldOffsetY + dy;
             //console.log(`Move: ${newOffsetX}, ${newOffsetY}`);
             this.drawCached(false);
         }
@@ -215,7 +213,11 @@ export class CanvasViewer extends React.Component<CanvasViewerProps, CanvasViewe
     handleMouseUp(evt:MouseEvent) {
         this.mouseDnX = undefined;
         this.mouseDnY = undefined;
-        this.drawCached(true);
+        //this.drawCached(true);
+        this.setState({
+            scale:this.state.scale * this.scale,
+            offsetX:this.state.offsetX + this.offsetX,
+            offsetY:this.state.offsetY + this.offsetY});
     }
 
     handleKey(evt:KeyboardEvent) {
@@ -236,10 +238,19 @@ export class CanvasViewer extends React.Component<CanvasViewerProps, CanvasViewe
     }
 
     handleWheel(evt:WheelEvent) {
-        if (evt.deltaY == 0 || !this.props.selection || this.props.selection.length == 0) {
+        if (evt.deltaY == 0
+            || evt.buttons != 0
+            || !this.props.selection
+            || this.props.selection.length == 0) {
             return;
         }
+        let lx = evt.offsetX * this.state.pixelRatio;
+        let ly = evt.offsetY * this.state.pixelRatio;
+        let gx = (lx - this.offsetX) / this.scale;
+        let gy = (ly - this.offsetY) / this.scale;
         this.scale = (evt.deltaY < 0) ? this.scale * 1.05 : this.scale * 0.95;
+        this.offsetX = lx - gx * this.scale;
+        this.offsetY = ly - gy * this.scale;
         this.drawCached(true);
     }
 
@@ -347,12 +358,10 @@ export class CanvasViewer extends React.Component<CanvasViewerProps, CanvasViewe
         context.translate(this.state.offsetX, this.state.offsetY);
         context.scale(this.state.scale, this.state.scale);
         this.drawSelection(context);
-        this.startX = Math.max(this.state.offsetX, 0);
-        this.startY = Math.max(this.state.offsetY, 0);
         //console.log(`Creating image cache ${this.startX}, ${this.startY}`);
         let cachedImage = context.getImageData(
-            this.startX,
-            this.startY,
+            0,
+            0,
             this.state.width,
             this.state.height);
         createImageBitmap(cachedImage).then(bitmap => {
@@ -373,7 +382,7 @@ export class CanvasViewer extends React.Component<CanvasViewerProps, CanvasViewe
             console.log("nothing cached");
         } else {
             context.save();
-            context.translate(this.offsetX + this.startX, this.offsetY + this.startY);
+            context.translate(this.offsetX, this.offsetY);
             context.scale(this.scale, this.scale);
             context.drawImage(this.cachedImage, 0, 0);
             context.restore();

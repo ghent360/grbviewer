@@ -64,6 +64,7 @@ class App extends React.Component<{}, AppState> {
                             key="svg"
                             style={{order:2, width:'100%', height:'100%'}}
                             layerColor={0xa02010}
+                            useCheckeredBackground={false}
                             selection={this.state.selection}/>
                 </div>
                 <div style={{order:4, flex:"flex-basis", width:"10px"}}/>
