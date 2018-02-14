@@ -24,17 +24,29 @@ export class LayerList extends React.Component<LayerListProps, {}> {
             <FontAwesomeIcon icon={(row.value) ? faCheckSquare : faSquare}/>
         },
         { accessor: 'fileName', Header:'File Name', headerStyle:LayerList.LeftAlignText },
-        { accessor: 'boardLayer', Header:'Layer', headerStyle:LayerList.LeftAlignText, width:150, Cell: row =>
+        { 
+            accessor: 'boardLayer',
+            Header:'Layer',
+            className:'rt-td-v', 
+            headerStyle:LayerList.LeftAlignText,
+            width:120,
+            Cell: row =>
             <LayerName layer={row.value} onChange={(layer:BoardLayer) => {
                 this.changeLayer(row.row.fileName, layer);
             }}/>
         },
-        { accessor: 'boardSide', Header:'Side', headerStyle:LayerList.LeftAlignText, width:150, Cell: row => 
+        {
+            accessor: 'boardSide',
+            Header:'Side',
+            className:'rt-td-v', 
+            headerStyle:LayerList.LeftAlignText,
+            width:110,
+            Cell: row => 
             <LayerSide side={row.value} onChange={(side:BoardSide) => {
                 this.changeSide(row.row.fileName, side);
             }}/>
         },
-        { accessor: 'status', Header:'Status', headerStyle:LayerList.LeftAlignText, width:100 },
+        { accessor: 'status', Header:'Status', headerStyle:LayerList.LeftAlignText, width:80 },
     ];
 
     changeLayer(fileName:string, layer:BoardLayer) {
@@ -63,6 +75,7 @@ export class LayerList extends React.Component<LayerListProps, {}> {
             columns={this.Columns}
             defaultPageSize={tableSize}
             minRows={tableSize}
+            showPageSizeOptions={false}
             getTdProps={
                 (state:any, rowInfo:ReactTable.RowInfo, column:ReactTable.Column) => {
                 return {
