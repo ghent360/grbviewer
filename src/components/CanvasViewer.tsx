@@ -61,7 +61,7 @@ export class CanvasViewer extends React.Component<CanvasViewerProps, CanvasViewe
     private redrawTimer:any;
     private mouseDnX:number;
     private mouseDnY:number;
-    private cachedImage:ImageBitmap;
+    private cachedImage:ImageBitmap|HTMLImageElement;
     private scale:number;
     private offsetX:number;
     private offsetY:number;
@@ -146,10 +146,7 @@ export class CanvasViewer extends React.Component<CanvasViewerProps, CanvasViewe
     }
 
     componentWillReceiveProps(nextProps:Readonly<CanvasViewerProps>) {
-        if (this.cachedImage) {
-            this.cachedImage.close();
-            this.cachedImage = undefined;
-        }
+        this.clearCashedImage();
         this.setState({
             contentSize:this.computeContentSize(nextProps),
             polygonPaths:this.createPaths(nextProps),
@@ -168,10 +165,7 @@ export class CanvasViewer extends React.Component<CanvasViewerProps, CanvasViewe
         canvas.addEventListener('mousedown', this.handleMouseDn.bind(this));
         canvas.addEventListener('mousemove', this.handleMouseMove.bind(this));
         canvas.addEventListener('mouseup', this.handleMouseUp.bind(this));
-        if (this.cachedImage) {
-            this.cachedImage.close();
-            this.cachedImage = undefined;
-        }
+        this.clearCashedImage();
     }
 
     componentWillUnmount() {
@@ -182,10 +176,7 @@ export class CanvasViewer extends React.Component<CanvasViewerProps, CanvasViewe
         canvas.removeEventListener('mousemove', this.handleMouseMove);
         canvas.removeEventListener('mouseup', this.handleMouseUp);
         window.removeEventListener('resize', this.handleResize);
-        if (this.cachedImage) {
-            this.cachedImage.close();
-            this.cachedImage = undefined;
-        }
+        this.clearCashedImage();
     }
 
     componentDidUpdate() {
@@ -225,10 +216,7 @@ export class CanvasViewer extends React.Component<CanvasViewerProps, CanvasViewe
             this.scale = 1;
             this.offsetY = 0;
             this.offsetY = 0;
-            if (this.cachedImage) {
-                this.cachedImage.close();
-                this.cachedImage = undefined;
-            }
+            this.clearCashedImage();
             this.setState({
                 scale:1.0,
                 offsetX: 0,
@@ -256,19 +244,18 @@ export class CanvasViewer extends React.Component<CanvasViewerProps, CanvasViewe
 
     handleResize(evt:any) {
         let canvas = this.refs.canvas as HTMLCanvasElement;
-        //console.log(`Canvas size ${canvas.clientWidth}x${canvas.clientHeight}`);
-        let width = canvas.clientWidth * this.state.pixelRatio;
-        let height = canvas.clientHeight * this.state.pixelRatio;
-        canvas.width = width;
-        canvas.height = height;
-        if (this.cachedImage) {
-            this.cachedImage.close();
-            this.cachedImage = undefined;
+        if (canvas) {
+            //console.log(`Canvas size ${canvas.clientWidth}x${canvas.clientHeight}`);
+            let width = canvas.clientWidth * this.state.pixelRatio;
+            let height = canvas.clientHeight * this.state.pixelRatio;
+            canvas.width = width;
+            canvas.height = height;
+            this.clearCashedImage();
+            this.setState({
+                width: width,
+                height: height,
+            });
         }
-        this.setState({
-            width: width,
-            height: height,
-        });
     }
 
     getSolidColor(layer:BoardLayer) {
@@ -342,15 +329,22 @@ export class CanvasViewer extends React.Component<CanvasViewerProps, CanvasViewe
         }
     }
 
+    clearCashedImage() {
+        if (this.cachedImage) {
+            if (!(this.cachedImage instanceof HTMLImageElement)) {
+            //if (this.cachedImage.close instanceof ImageBitmap) {
+                this.cachedImage.close();
+            }
+            this.cachedImage = undefined;
+        }
+    }
+
     drawFine() {
         if (this.redrawTimer) {
             clearTimeout(this.redrawTimer);
         }
         this.redrawTimer = undefined;
-        if (this.cachedImage) {
-            this.cachedImage.close();
-            this.cachedImage = undefined;
-        }
+        this.clearCashedImage();
         let canvas = this.refs.canvas as HTMLCanvasElement;
         const context = canvas.getContext('2d');
         this.clearCanvas(context);
@@ -364,9 +358,17 @@ export class CanvasViewer extends React.Component<CanvasViewerProps, CanvasViewe
             0,
             this.state.width,
             this.state.height);
-        createImageBitmap(cachedImage).then(bitmap => {
-            this.cachedImage = bitmap;
-        });
+        if (self.createImageBitmap) {
+            createImageBitmap(cachedImage).then(bitmap => {
+                this.cachedImage = bitmap;
+            });
+        } else {
+            let image = new Image();
+            image.onload = () => {
+                this.cachedImage = image;
+            }
+            image.src = canvas.toDataURL();
+        }
         this.scale = 1.0;
         this.offsetX = 0;
         this.offsetY = 0;
