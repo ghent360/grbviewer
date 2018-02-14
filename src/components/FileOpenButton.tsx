@@ -31,7 +31,7 @@ export class FileOpenButton extends React.Component<FileOpenButtonProps, FileOpe
         if (this.state.fileName) {
             return this.state.fileName;
         }
-        return "Choose a file";
+        return "Choose a ZIP file with gerber data";
     }
 
     render() {

@@ -57,6 +57,11 @@ class App extends React.Component<{}, AppState> {
                         key="gerberViewer"
                         file={this.state.file}
                         onSelectChange={(selection) => this.onSelectGerber(selection)}/>
+                    <span className="help" style={{fontSize:"12px"}}>
+                        <br/>Pan: mouse down and dragg a point in the image
+                        <br/>Zoom: use the mouse wheel
+                        <br/>Reset: press the 'z' key to reset the view
+                    </span>
                 </div>
                 <div style={{order:2, flex:"flex-basis", width:"10px"}}/>
                 <div style={{order:3, flex:1, overflow:"hidden"}}>
