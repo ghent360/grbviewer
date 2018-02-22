@@ -1,6 +1,7 @@
 "use strict";
 
 var path = require('path');
+const { CheckerPlugin } = require('awesome-typescript-loader')
 
 module.exports = () => {
     return {
