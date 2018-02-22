@@ -6,9 +6,6 @@ module.exports = () => {
     return {
         entry: {
             AsyncGerberParser: "./workers/AsyncGerberParser.worker.ts",
-            // Add other web workers here!
-            // ex.
-            // test: "./js/workers/Test.worker.ts",
         },
 
         output: {
@@ -21,7 +18,7 @@ module.exports = () => {
 
         resolve: {
             // Add '.ts' and '.tsx' as resolvable extensions.
-            extensions: [".ts", ".tsx", ".js", ".json", ".css" ]
+            extensions: [".ts", ".js"]
         },
 
         module: {

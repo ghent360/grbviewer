@@ -57,8 +57,9 @@ class GerberRenderer {
     }
 
     processGerberFile():void {
-        new JSZip().loadAsync(this.inputData_.input).then(
-            zip => {
+        new JSZip()
+            .loadAsync(this.inputData_.input)
+            .then(zip => {
                 for(let fileName in zip.files) {
                     let zipObject = zip.files[fileName];
                     if (zipObject.dir) {
