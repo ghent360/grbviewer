@@ -1,8 +1,7 @@
 import * as React from "react";
 import * as ReactTable from "react-table";
-import * as FontAwesomeIcon from "@fortawesome/react-fontawesome";
-import * as faSquare from "@fortawesome/fontawesome-free-regular/faSquare";
-import * as faCheckSquare from "@fortawesome/fontawesome-free-regular/faCheckSquare";
+import FontAwesomeIcon from "@fortawesome/react-fontawesome";
+import { faSquare, faCheckSquare } from "@fortawesome/fontawesome-free-regular";
 import '../../css/react-table.css';
 import { LayerName } from "./LayerName";
 import { LayerSide } from "./LayerSide";
@@ -20,8 +19,8 @@ export interface LayerListProps {
 export class LayerList extends React.Component<LayerListProps, {}> {
     private static LeftAlignText = { textAlign:"left" };
     private Columns:Array<ReactTable.Column> = [
-        { accessor: 'selected', Header:'', width:25, Cell: row => 
-            <FontAwesomeIcon icon={(row.value) ? faCheckSquare : faSquare}/>
+        { accessor: 'selected', Header:'', width:25, 
+            Cell: row => <FontAwesomeIcon icon={(row.value) ? faCheckSquare : faSquare}/>
         },
         { accessor: 'fileName', Header:'File Name', headerStyle:LayerList.LeftAlignText },
         { 

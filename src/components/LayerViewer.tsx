@@ -61,8 +61,8 @@ export class LayerViewer extends React.Component<LayerViewerProps, LayerViewerSt
         reader.onload = (e:ProgressEvent) => {
             this.processZipFile(reader.result);
         };
-        reader.onerror = (e:ErrorEvent) => {
-            console.log("Error " + e.error);
+        reader.onerror = (e:any) => {
+            console.log("Error: " + e.error);
             ReactGA.exception({
                 description: 'Read input file error.',
                 fatal: true
