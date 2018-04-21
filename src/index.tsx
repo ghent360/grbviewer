@@ -10,7 +10,7 @@ import {SvgViewer} from "./components/SvgViewer";
 import * as ReactGA from 'react-ga';
 import {GerberPolygons} from "../common/AsyncGerberParserAPI";
 import {Build} from "../common/build";
-import { BoardLayer } from "../../grbparser/dist/gerberutils";
+import {BoardLayer} from "../../grbparser/dist/gerberutils";
 
 class AppState {
     file:File;
