@@ -42,10 +42,11 @@ function colorToHtml(clr:number):string {
     return ss;
 }
 
+// Oshpark mask #422b44
 const layerColors = {
-    0:"#b87333",    // Copper
-    1:"gold",       // SolderMask
-    2:"white",      // Silk
+    0:"#e9b397",    // Copper
+    1:"#d8bf8a",    // SolderMask - ENIG
+    2:"white",      // Silk // #c2d3df
     3:"silver",     // Paste
     4:"white",      // Drill
     5:"black",      // Mill
@@ -92,16 +93,28 @@ export class CanvasViewer extends React.Component<CanvasViewerProps, CanvasViewe
         if (props.selection && props.selection.length > 0) {
             props.selection.forEach(o => {
                 let solidPath = new Path2D();
+                let isEmpty = true;
                 o.polygons.solids
                     .filter(p => p.length > 1)
-                    .forEach(p => this.drawPolygon(p, solidPath));
-                solidPath.closePath();
-                result.set(o.fileName + ":solid", solidPath);
+                    .forEach(p => {
+                        this.drawPolygon(p, solidPath);
+                        isEmpty = false;
+                    });
+                if (!isEmpty) {
+                    solidPath.closePath();
+                    result.set(o.fileName + ":solid", solidPath);
+                }
                 let thinPath = new Path2D();
+                isEmpty = true;
                 o.polygons.thins
                     .filter(p => p.length > 1)
-                    .forEach(p => this.drawPolygon(p, thinPath));
-                result.set(o.fileName + ":thin", thinPath);
+                    .forEach(p => {
+                        this.drawPolygon(p, thinPath);
+                        isEmpty = false;
+                    });
+                if (!isEmpty) {
+                    result.set(o.fileName + ":thin", thinPath);
+                }
             });
         }
         return result;
@@ -290,17 +303,51 @@ export class CanvasViewer extends React.Component<CanvasViewerProps, CanvasViewe
     }
 
     drawOutline(context:CanvasRenderingContext2D) {
-        context.fillStyle = '#004400';
-        context.fillRect(0, 0, this.state.width, this.state.height);
+        let outline:Array<Path2D> = this.calcBoardOutline();
+        context.fillStyle = '#ab9f15';
+        outline.forEach(p => context.fill(p));
+    }
+
+    calcBoardOutline():Array<Path2D> {
+        let selection = this.props.selection;
+        let outlineLayers = selection.filter(l => l.boardLayer == BoardLayer.Outline);
+        let filledOutline = false;
+        let outline:Array<Path2D> = [];
+        if (outlineLayers.length > 0) {
+            outlineLayers.forEach(o => {
+                let path:Path2D = this.state.polygonPaths.get(o.fileName + ":thin");
+                if (path == undefined) {
+                    // Hmm what to do if there is no thin polygon path
+                    // filling the solid path, just draws the cutout shape.
+                    //path = this.state.polygonPaths.get(o.fileName + ":solid");
+                }
+                if (path != undefined) {
+                    outline.push(path);
+                    filledOutline = true;
+                }
+            });
+        }
+        if (!filledOutline) {
+            // We could not find anything to fill as outline, just draw min/max rectangle
+            let rect = new Path2D();
+            rect.rect(
+                this.state.contentSize.contentMinX,
+                this.state.contentSize.contentMinY,
+                this.state.contentSize.contentWidth,
+                this.state.contentSize.contentHeight);
+            outline.push(rect);
+        }
+        return outline;
     }
 
     drawSelection(context:CanvasRenderingContext2D) {
         let selection = this.props.selection;
         let width = this.state.width;
         let height = this.state.height;
+        let outline:Array<Path2D>;
         if (selection.length > 1) {
             selection.sort((a, b) => a.boardLayer - b.boardLayer);
-            this.drawOutline(context);
+            outline = this.calcBoardOutline();
         }
         if (selection && width > 0 && height > 0) {
             let scaleX = width / this.state.contentSize.contentWidth;
@@ -314,17 +361,30 @@ export class CanvasViewer extends React.Component<CanvasViewerProps, CanvasViewe
             context.translate(
                 -this.state.contentSize.contentMinX,
                 -this.state.contentSize.contentMinY);
-            context.lineWidth = 0;
-            selection.forEach(o => {
-                context.fillStyle = this.getSolidColor(o.boardLayer);
-                let path:any = this.state.polygonPaths.get(o.fileName + ":solid");
-                context.fill(path);
-            });
-            context.lineWidth = 1/scale;
-            selection.forEach(o => {
-                context.strokeStyle = this.getBorderColor(o.boardLayer);
-                let path = this.state.polygonPaths.get(o.fileName + ":thin");
-                context.stroke(path);
+            if (selection.length > 1) {
+                context.lineWidth = 0;
+                context.fillStyle = '#ab9f15';
+                outline.forEach(p => context.fill(p));
+            }
+            selection.forEach(l => {
+                let path = this.state.polygonPaths.get(l.fileName + ":solid");
+                if (path != undefined) {
+                    context.lineWidth = 0;
+                    if (l.boardLayer == BoardLayer.SolderMask && outline != undefined) {
+                        context.fillStyle = 'rgba(32, 2, 94, 0.7)'; //' rgba(43, 20, 68, 0.7) #2b1444'
+                        outline.forEach(p => context.fill(p));
+                    }
+                    context.fillStyle = this.getSolidColor(l.boardLayer);
+                    context.fill(path);
+                }
+                path = this.state.polygonPaths.get(l.fileName + ":thin");
+                if (path != undefined) {
+                    // Set line width to 1 pixel. The width is scaled with the transform, so
+                    // 1/scale ends up being 1px.
+                    context.lineWidth = 1/scale;
+                    context.strokeStyle = this.getBorderColor(l.boardLayer);
+                    context.stroke(path);
+                }
             });
         }
     }
