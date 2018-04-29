@@ -397,8 +397,8 @@ export class CanvasViewer extends React.Component<CanvasViewerProps, CanvasViewe
             this.redrawTimer = setTimeout(() => {
                     this.setState({
                         scale:this.state.scale * this.scale,
-                        offsetX:this.state.offsetX + this.offsetX,
-                        offsetY:this.state.offsetY + this.offsetY});
+                        offsetX:this.state.offsetX * this.scale + this.offsetX,
+                        offsetY:this.state.offsetY * this.scale + this.offsetY});
                 },
                 500);
         }
