@@ -170,9 +170,6 @@ export class CanvasViewer extends React.Component<CanvasViewerProps, CanvasViewe
         this.setState({
             contentSize:this.computeContentSize(nextProps),
             polygonPaths:this.createPaths(nextProps),
-            scale:1,
-            offsetX:0,
-            offsetY:0,
         });
     }
     
