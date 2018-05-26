@@ -42,10 +42,17 @@ function colorToHtml(clr:number):string {
     return ss;
 }
 
-// Oshpark mask #422b44
+// Oshpark mask #2b1444
+//
+// FR4 #ab9f15
+const colorFR4 = '#ab9f15';
+const colorENIG = '#d8bf8a';
+const colorHASL = '#cad4c9';
+const colorGreen = '#0e8044';
+
 const layerColors = {
     0:"#e9b397",    // Copper
-    1:"#d8bf8a",    // SolderMask - ENIG
+    1:colorENIG,    // SolderMask
     2:"white",      // Silk // #c2d3df
     3:"silver",     // Paste
     4:"white",      // Drill
@@ -304,7 +311,7 @@ export class CanvasViewer extends React.Component<CanvasViewerProps, CanvasViewe
 
     drawOutline(context:CanvasRenderingContext2D) {
         let outline:Array<Path2D> = this.calcBoardOutline();
-        context.fillStyle = '#ab9f15';
+        context.fillStyle = colorFR4;
         outline.forEach(p => context.fill(p));
     }
 
@@ -363,7 +370,7 @@ export class CanvasViewer extends React.Component<CanvasViewerProps, CanvasViewe
                 -this.state.contentSize.contentMinY);
             if (selection.length > 1) {
                 context.lineWidth = 0;
-                context.fillStyle = '#ab9f15';
+                context.fillStyle = colorFR4;
                 outline.forEach(p => context.fill(p));
             }
             selection.forEach(l => {
@@ -371,7 +378,7 @@ export class CanvasViewer extends React.Component<CanvasViewerProps, CanvasViewe
                 if (path != undefined) {
                     context.lineWidth = 0;
                     if (l.boardLayer == BoardLayer.SolderMask && outline != undefined) {
-                        context.fillStyle = 'rgba(32, 2, 94, 0.7)'; //' rgba(43, 20, 68, 0.7) #2b1444'
+                        context.fillStyle = 'rgba(32, 2, 94, 0.7)'; // target color #2b1444
                         outline.forEach(p => context.fill(p));
                     }
                     context.fillStyle = this.getSolidColor(l.boardLayer);
