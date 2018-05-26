@@ -167,10 +167,20 @@ export class CanvasViewer extends React.Component<CanvasViewerProps, CanvasViewe
 
     componentWillReceiveProps(nextProps:Readonly<CanvasViewerProps>) {
         this.clearCashedImage();
-        this.setState({
+        let resetView = false;
+        if (!nextProps.selection || nextProps.selection.length == 0) {
+            resetView = true;
+        }
+        let newState:any = {
             contentSize:this.computeContentSize(nextProps),
-            polygonPaths:this.createPaths(nextProps),
-        });
+            polygonPaths:this.createPaths(nextProps)
+        };
+        if (resetView) {
+            newState.scale = 1;
+            newState.offsetX = 0;
+            newState.offsetY = 0;
+        }
+        this.setState(newState);
     }
     
     componentDidMount() {
