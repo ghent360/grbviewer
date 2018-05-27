@@ -8,19 +8,20 @@ import {FileOpenButton} from "./components/FileOpenButton";
 import {CanvasViewer} from "./components/CanvasViewer";
 import {SvgViewer} from "./components/SvgViewer";
 import * as ReactGA from 'react-ga';
-import {GerberPolygons} from "../common/AsyncGerberParserAPI";
+import {GerberPolygons, Bounds} from "../common/AsyncGerberParserAPI";
 import {Build} from "../common/build";
 import {BoardLayer} from "../../grbparser/dist/gerberutils";
 
 class AppState {
     file:File;
-    selection:Array<LayerInfo>
+    selection:Array<LayerInfo>;
+    bounds:Bounds;
 }
 
 class App extends React.Component<{}, AppState> {
     constructor(props:{}, context?:any) {
         super(props, context);
-        this.state = { file:null, selection:[] };
+        this.state = { file:null, selection:[], bounds:undefined };
         ReactGA.initialize('UA-111584522-1', {debug: false});
         ReactGA.pageview(window.location.pathname + window.location.search);
     }
@@ -29,11 +30,11 @@ class App extends React.Component<{}, AppState> {
         this.setState({file:file, selection:[]});
     }
 
-    onSelectGerber(selection:Array<LayerInfo>) {
+    onSelectGerber(selection:Array<LayerInfo>, bounds:Bounds) {
         if (!selection) {
             return;
         }
-        this.setState({selection:selection});
+        this.setState({selection:selection, bounds:bounds});
     }
 
     render() {
@@ -56,7 +57,7 @@ class App extends React.Component<{}, AppState> {
                     <LayerViewer
                         key="gerberViewer"
                         file={this.state.file}
-                        onSelectChange={(selection) => this.onSelectGerber(selection)}/>
+                        onSelectChange={(selection, bounds) => this.onSelectGerber(selection, bounds)}/>
                     <span className="help" style={{fontSize:"12px"}}>
                         <br/>Pan: mouse down and dragg a point in the image
                         <br/>Zoom: use the mouse wheel
@@ -70,7 +71,8 @@ class App extends React.Component<{}, AppState> {
                             style={{order:2, width:'100%', height:'100%'}}
                             layerColor={0xa02010}
                             useCheckeredBackground={false}
-                            selection={this.state.selection}/>
+                            selection={this.state.selection}
+                            bounds={this.state.bounds}/>
                 </div>
                 <div style={{order:4, flex:"flex-basis", width:"10px"}}/>
             </div>

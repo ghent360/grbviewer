@@ -13,6 +13,7 @@ export interface LayerListProps {
     onClick?:(fileName:string) => void;
     onChangeLayer?:(fileName:string, layer:BoardLayer) => void;
     onChangeSide?:(fileName:string, side:BoardSide) => void;
+    onChangeOpacity?:(fileName:string, opacity:number) => void;
     style?:React.CSSProperties;
 }
 
@@ -20,7 +21,7 @@ export class LayerList extends React.Component<LayerListProps, {}> {
     private static LeftAlignText = { textAlign:"left" };
     private Columns:Array<ReactTable.Column> = [
         { accessor: 'selected', Header:'', width:25, 
-            Cell: row => <FontAwesomeIcon icon={(row.value) ? faCheckSquare : faSquare}/>
+            Cell: cell => <FontAwesomeIcon icon={(cell.value) ? faCheckSquare : faSquare}/>
         },
         { accessor: 'fileName', Header:'File Name', headerStyle:LayerList.LeftAlignText },
         { 
@@ -29,9 +30,9 @@ export class LayerList extends React.Component<LayerListProps, {}> {
             className:'rt-td-v', 
             headerStyle:LayerList.LeftAlignText,
             width:120,
-            Cell: row =>
-            <LayerName layer={row.value} onChange={(layer:BoardLayer) => {
-                this.changeLayer(row.row.fileName, layer);
+            Cell: cell =>
+            <LayerName layer={cell.value} onChange={(layer:BoardLayer) => {
+                this.changeLayer(cell.row.fileName, layer);
             }}/>
         },
         {
@@ -40,12 +41,42 @@ export class LayerList extends React.Component<LayerListProps, {}> {
             className:'rt-td-v', 
             headerStyle:LayerList.LeftAlignText,
             width:110,
-            Cell: row => 
-            <LayerSide side={row.value} onChange={(side:BoardSide) => {
-                this.changeSide(row.row.fileName, side);
+            Cell: cell => 
+            <LayerSide side={cell.value} onChange={(side:BoardSide) => {
+                this.changeSide(cell.row.fileName, side);
             }}/>
         },
-        { accessor: 'status', Header:'Status', headerStyle:LayerList.LeftAlignText, width:80 },
+        { 
+            id:"status",
+            accessor: (row:LayerInfo) => ({status:row.status, opacity:row.opacity}),
+            Header:'Status',
+            headerStyle:LayerList.LeftAlignText,
+            width:80,
+            Cell: cell => !cell.row.selected ? cell.value.status : (
+                <div
+                    style={{
+                        width: '100%',
+                        height: '100%',
+                        backgroundColor: '#dadada',
+                        borderRadius: '2px'
+                    }}
+                    onClick={ (e:React.MouseEvent<HTMLDivElement>) => {
+                        let opacity = e.nativeEvent.offsetX/e.currentTarget.clientWidth;
+                        opacity = Math.round(opacity * 10);
+                        this.changeOpacity(cell.row.fileName, opacity / 10);
+                    }}
+                >
+                    <div
+                        style={{
+                            width: `${Math.round(cell.value.opacity * 100)}%`,
+                            height: '100%',
+                            backgroundColor: '#858585',
+                            borderRadius: '2px'
+                        }}
+                    />
+                </div>
+              ),
+        },
     ];
 
     changeLayer(fileName:string, layer:BoardLayer) {
@@ -57,6 +88,12 @@ export class LayerList extends React.Component<LayerListProps, {}> {
     changeSide(fileName:string, side:BoardSide) {
         if (this.props.onChangeSide) {
             this.props.onChangeSide(fileName, side);
+        }
+    }
+
+    changeOpacity(fileName:string, opacity:number) {
+        if (this.props.onChangeOpacity) {
+            this.props.onChangeOpacity(fileName, opacity);
         }
     }
 
@@ -83,8 +120,7 @@ export class LayerList extends React.Component<LayerListProps, {}> {
                             return;
                         }
                         if (column.Header == ""
-                            || column.Header == "File Name"
-                            || column.Header == "Status") {
+                            || column.Header == "File Name") {
                             let row = this.props.layers[rowInfo.index];
                             if (this.props.onClick && row.status == 'done') {
                                 this.props.onClick(row.fileName);

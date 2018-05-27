@@ -9,6 +9,7 @@ export interface CanvasViewerProps {
     style?:React.CSSProperties;
     blockSize?:number;
     useCheckeredBackground?:boolean;
+    bounds?:Bounds;
 }
 
 interface ContentSize {
@@ -23,7 +24,6 @@ interface CanvasViewerState {
     width:number;
     height:number;
     contentSize:ContentSize;
-    polygonPaths:Map<string, Path2D>;
     scale:number;
     offsetX:number;
     offsetY:number;
@@ -83,7 +83,6 @@ export class CanvasViewer extends React.Component<CanvasViewerProps, CanvasViewe
             width:0,
             height:0,
             contentSize:this.computeContentSize(props),
-            polygonPaths:this.createPaths(props),
             scale:1,
             offsetX:0,
             offsetY:0,
@@ -95,61 +94,9 @@ export class CanvasViewer extends React.Component<CanvasViewerProps, CanvasViewe
         this.oldOffsetY = 0;
     }
 
-    private createPaths(props:CanvasViewerProps):Map<string, Path2D> {
-        let result:Map<string, Path2D> = new Map();
-        if (props.selection && props.selection.length > 0) {
-            props.selection.forEach(o => {
-                let solidPath = new Path2D();
-                let isEmpty = true;
-                o.polygons.solids
-                    .filter(p => p.length > 1)
-                    .forEach(p => {
-                        this.drawPolygon(p, solidPath);
-                        isEmpty = false;
-                    });
-                if (!isEmpty) {
-                    solidPath.closePath();
-                    result.set(o.fileName + ":solid", solidPath);
-                }
-                let thinPath = new Path2D();
-                isEmpty = true;
-                o.polygons.thins
-                    .filter(p => p.length > 1)
-                    .forEach(p => {
-                        this.drawPolygon(p, thinPath);
-                        isEmpty = false;
-                    });
-                if (!isEmpty) {
-                    result.set(o.fileName + ":thin", thinPath);
-                }
-            });
-        }
-        return result;
-    }
-
-    private calcBounds(selection:Array<LayerInfo>):Bounds {
-        let result:{minx:number, miny:number, maxx:number, maxy:number} = selection[0].polygons.bounds;
-        selection.slice(1).forEach(o => {
-            let bounds = o.polygons.bounds;
-            if (bounds.minx < result.minx) {
-                result.minx = bounds.minx;
-            }
-            if (bounds.miny < result.miny) {
-                result.miny = bounds.miny;
-            }
-            if (bounds.maxx > result.maxx) {
-                result.maxx = bounds.maxx;
-            }
-            if (bounds.maxy > result.maxy) {
-                result.maxy = bounds.maxy;
-            }
-        });
-        return result;
-    }
-
     computeContentSize(props:CanvasViewerProps):ContentSize {
-        if (props.selection && props.selection.length > 0) {
-            let bounds = this.calcBounds(props.selection);
+        if (props.bounds) {
+            let bounds = props.bounds;
             return { 
                 contentWidth:bounds.maxx - bounds.minx,
                 contentHeight:bounds.maxy - bounds.miny,
@@ -173,7 +120,6 @@ export class CanvasViewer extends React.Component<CanvasViewerProps, CanvasViewe
         }
         let newState:any = {
             contentSize:this.computeContentSize(nextProps),
-            polygonPaths:this.createPaths(nextProps)
         };
         if (resetView) {
             newState.scale = 1;
@@ -329,7 +275,7 @@ export class CanvasViewer extends React.Component<CanvasViewerProps, CanvasViewe
         let outline:Array<Path2D> = [];
         if (outlineLayers.length > 0) {
             outlineLayers.forEach(o => {
-                let path:Path2D = this.state.polygonPaths.get(o.fileName + ":thin");
+                let path:Path2D = o.thin;
                 if (path == undefined) {
                     // Hmm what to do if there is no thin polygon path
                     // filling the solid path, just draws the cutout shape.
@@ -381,9 +327,10 @@ export class CanvasViewer extends React.Component<CanvasViewerProps, CanvasViewe
                 outline.forEach(p => context.fill(p));
             }
             selection.forEach(l => {
-                let path = this.state.polygonPaths.get(l.fileName + ":solid");
+                let path = l.solid;
                 if (path != undefined) {
                     context.lineWidth = 0;
+                    context.globalAlpha = l.opacity;
                     if (l.boardLayer == BoardLayer.SolderMask && outline != undefined) {
                         context.fillStyle = 'rgba(32, 2, 94, 0.7)'; // target color #2b1444
                         outline.forEach(p => context.fill(p));
@@ -391,7 +338,7 @@ export class CanvasViewer extends React.Component<CanvasViewerProps, CanvasViewe
                     context.fillStyle = this.getSolidColor(l.boardLayer);
                     context.fill(path);
                 }
-                path = this.state.polygonPaths.get(l.fileName + ":thin");
+                path = l.thin;
                 if (path != undefined) {
                     // Set line width to 1 pixel. The width is scaled with the transform, so
                     // 1/scale ends up being 1px.
@@ -477,13 +424,6 @@ export class CanvasViewer extends React.Component<CanvasViewerProps, CanvasViewe
                 500);
         }
         //console.log('draw cached');
-    }
-
-    drawPolygon(polygon:Float64Array, context:CanvasRenderingContext2D|Path2D) {
-        context.moveTo(polygon[0], polygon[1]);
-        for (let idx = 2; idx < polygon.length; idx += 2) {
-            context.lineTo(polygon[idx], polygon[idx + 1]);
-        }
     }
 
     render() {
