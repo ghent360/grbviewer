@@ -26,7 +26,7 @@ export interface LayerInfo {
     readonly thin:Path2D;
 }
 
-export class LayerFile implements LayerInfo {
+class LayerFile implements LayerInfo {
     constructor(
         public fileName:string,
         public boardSide:BoardSide,

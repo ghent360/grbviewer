@@ -4,7 +4,7 @@ import { LayerInfo } from "./LayerViewer";
 import { BoardLayer } from "../../../grbparser/dist/gerberutils";
 
 export interface CanvasViewerProps { 
-    selection?: Array<LayerInfo>;
+    layers?: Array<LayerInfo>;
     layerColor:number;
     style?:React.CSSProperties;
     blockSize?:number;
@@ -20,6 +20,7 @@ interface ContentSize {
 }
 
 interface CanvasViewerState {
+    selection:Array<LayerInfo>;
     pixelRatio:number;
     width:number;
     height:number;
@@ -86,6 +87,7 @@ export class CanvasViewer extends React.Component<CanvasViewerProps, CanvasViewe
             scale:1,
             offsetX:0,
             offsetY:0,
+            selection: props.layers ? props.layers.filter(l => l.selected) : undefined,
         }
         this.scale = 1;
         this.offsetX = 0;
@@ -115,11 +117,12 @@ export class CanvasViewer extends React.Component<CanvasViewerProps, CanvasViewe
     componentWillReceiveProps(nextProps:Readonly<CanvasViewerProps>) {
         this.clearCashedImage();
         let resetView = false;
-        if (!nextProps.selection || nextProps.selection.length == 0) {
+        if (!nextProps.layers || !nextProps.layers.find(l => l.selected)) {
             resetView = true;
         }
         let newState:any = {
             contentSize:this.computeContentSize(nextProps),
+            selection: nextProps.layers ? nextProps.layers.filter(l => l.selected) : undefined,
         };
         if (resetView) {
             newState.scale = 1;
@@ -138,11 +141,13 @@ export class CanvasViewer extends React.Component<CanvasViewerProps, CanvasViewe
         canvas.addEventListener('mousedown', this.handleMouseDn.bind(this));
         canvas.addEventListener('mousemove', this.handleMouseMove.bind(this));
         canvas.addEventListener('mouseup', this.handleMouseUp.bind(this));
+        canvas.addEventListener('resize', this.handleResize.bind(this));
         this.clearCashedImage();
     }
 
     componentWillUnmount() {
         let canvas = this.refs.canvas as HTMLCanvasElement;
+        canvas.removeEventListener('resize', this.handleResize);
         window.removeEventListener('keypress', this.handleKey);
         canvas.removeEventListener('wheel', this.handleWheel);
         canvas.removeEventListener('mousedown', this.handleMouseDn);
@@ -201,8 +206,8 @@ export class CanvasViewer extends React.Component<CanvasViewerProps, CanvasViewe
     handleWheel(evt:WheelEvent) {
         if (evt.deltaY == 0
             || evt.buttons != 0
-            || !this.props.selection
-            || this.props.selection.length == 0) {
+            || !this.state.selection
+            || this.state.selection.length == 0) {
             return;
         }
         let lx = evt.offsetX * this.state.pixelRatio;
@@ -218,7 +223,7 @@ export class CanvasViewer extends React.Component<CanvasViewerProps, CanvasViewe
     handleResize(evt:any) {
         let canvas = this.refs.canvas as HTMLCanvasElement;
         if (canvas) {
-            //console.log(`Canvas size ${canvas.clientWidth}x${canvas.clientHeight}`);
+            console.log(`Canvas size ${canvas.clientWidth}x${canvas.clientHeight}`);
             let width = canvas.clientWidth * this.state.pixelRatio;
             let height = canvas.clientHeight * this.state.pixelRatio;
             canvas.width = width;
@@ -227,19 +232,20 @@ export class CanvasViewer extends React.Component<CanvasViewerProps, CanvasViewe
             this.setState({
                 width: width,
                 height: height,
+                pixelRatio : window.devicePixelRatio || 1,
             });
         }
     }
 
     getSolidColor(layer:BoardLayer) {
-        if (this.props.selection.length == 1) {
+        if (this.state.selection.length == 1) {
             return colorToHtml(this.props.layerColor);
         }
         return layerColors[layer];
     }
 
     getBorderColor(layer:BoardLayer) {
-        if (this.props.selection.length == 1) {
+        if (this.state.selection.length == 1) {
             return colorToHtml(this.props.layerColor);
         }
         return layerColors[layer];
@@ -269,7 +275,7 @@ export class CanvasViewer extends React.Component<CanvasViewerProps, CanvasViewe
     }
 
     calcBoardOutline():Array<Path2D> {
-        let selection = this.props.selection;
+        let selection = this.state.selection;
         let outlineLayers = selection.filter(l => l.boardLayer == BoardLayer.Outline);
         let filledOutline = false;
         let outline:Array<Path2D> = [];
@@ -301,7 +307,7 @@ export class CanvasViewer extends React.Component<CanvasViewerProps, CanvasViewe
     }
 
     drawSelection(context:CanvasRenderingContext2D) {
-        let selection = this.props.selection;
+        let selection = this.state.selection;
         let width = this.state.width;
         let height = this.state.height;
         let outline:Array<Path2D>;
