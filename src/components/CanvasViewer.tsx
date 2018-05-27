@@ -1,7 +1,7 @@
 import * as React from "react";
 import { GerberPolygons, Bounds } from "../../common/AsyncGerberParserAPI";
-import { LayerInfo } from "./LayerViewer";
 import { BoardLayer } from "../../../grbparser/dist/gerberutils";
+import { LayerInfo } from "..";
 
 export interface CanvasViewerProps { 
     layers?: Array<LayerInfo>;

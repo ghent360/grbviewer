@@ -6,7 +6,7 @@ import '../../css/react-table.css';
 import { LayerName } from "./LayerName";
 import { LayerSide } from "./LayerSide";
 import { BoardLayer, BoardSide } from "../../../grbparser/dist/gerberutils";
-import { LayerInfo } from "./LayerViewer";
+import { LayerInfo } from "..";
 
 export interface LayerListProps { 
     layers:Array<LayerInfo>;
