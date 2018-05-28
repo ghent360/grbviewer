@@ -5,13 +5,13 @@ import {Hello} from "./components/Hello";
 import {LayerName} from "./components/LayerName";
 import {FileOpenButton} from "./components/FileOpenButton";
 import {CanvasViewer} from "./components/CanvasViewer";
-import {SvgViewer} from "./components/SvgViewer";
 import * as ReactGA from 'react-ga';
 import {GerberPolygons, Bounds, GerberParserOutput} from "../common/AsyncGerberParserAPI";
 import {Build} from "../common/build";
 import {BoardLayer, BoardSide} from "../../grbparser/dist/gerberutils";
 import {AsyncGerberParserInterface} from "./AsyncGerberParser";
-import { LayerList } from "./components/LayerList";
+import {LayerList} from "./components/LayerList";
+import * as Color from 'color';
 
 export interface LayerInfo {
     readonly fileName:string;
@@ -24,7 +24,31 @@ export interface LayerInfo {
     readonly opacity:number;
     readonly solid:Path2D;
     readonly thin:Path2D;
+    readonly color:Color;
 }
+
+// Oshpark mask #2b1444
+//
+// FR4 #ab9f15
+export const colorFR4 = '#ab9f15';
+export const colorENIG = '#d8bf8a';
+export const colorHASL = '#cad4c9';
+export const colorGreen = '#0e8044';
+
+const layerColors = {
+    0:"#e9b397",    // Copper
+    1:colorENIG,    // SolderMask
+    2:"white",      // Silk // #c2d3df
+    3:"silver",     // Paste
+    4:"white",      // Drill
+    5:"black",      // Mill
+    6:"black",      // Outline
+    7:"carbon",     // Carbon
+    8:"green",      // Notes
+    9:"yellow",     // Assembly
+    10:"brown",     // Mechanical
+    11:"black",     // Unknown
+};
 
 class LayerFile implements LayerInfo {
     constructor(
@@ -37,13 +61,13 @@ class LayerFile implements LayerInfo {
         public selected:boolean,
         public opacity:number,
         public solid:Path2D,
-        public thin:Path2D) {}
+        public thin:Path2D,
+        public color:Color) {}
 }
 
 class AppState {
     file:File;
     layerList:Array<LayerFile>;
-    selection:Array<LayerInfo>;
     bounds:Bounds;
 }
 
@@ -110,13 +134,13 @@ class App extends React.Component<{}, AppState> {
     
     constructor(props:{}, context?:any) {
         super(props, context);
-        this.state = { file:null, layerList:[], selection:[], bounds:undefined };
+        this.state = { file:null, layerList:[], bounds:undefined };
         ReactGA.initialize('UA-111584522-1', {debug: false});
         ReactGA.pageview(window.location.pathname + window.location.search);
     }
 
     handleChangeFile(file:File) {
-        this.setState({file:file, layerList:[], selection:[], bounds:undefined});
+        this.setState({file:file, layerList:[], bounds:undefined});
         this.readZipFile(file);
     }
 
@@ -137,7 +161,7 @@ class App extends React.Component<{}, AppState> {
     }
 
     processZipFile(stream:ArrayBuffer):void {
-        this.setState({layerList:[]});
+        this.setState({layerList:[], bounds:undefined});
         // Kill the old processing thread
         if (this.gerberParser) {
             this.gerberParser.terminate();
@@ -151,18 +175,23 @@ class App extends React.Component<{}, AppState> {
         let handled = false
         for (let gerberFile of this.state.layerList) {
             if (gerberFile.fileName === output.fileName) {
-                let cache = output.gerber ? createPathCache(output.gerber) : undefined;
+                let cache = 
+                    gerberFile.solid == undefined
+                    && gerberFile.thin == undefined
+                    && output.gerber ? createPathCache(output.gerber) : undefined;
+                let layer = output.layer ? output.layer : gerberFile.boardLayer;
                 let newGerberFile = new LayerFile(
                     output.fileName,
                     output.side ? output.side : gerberFile.boardSide,
-                    output.layer ? output.layer : gerberFile.boardLayer,
+                    layer,
                     output.status,
                     output.content ? output.content : gerberFile.content,
                     output.gerber,
                     false,
                     1,
-                    cache ? cache.solid : undefined,
-                    cache ? cache.thin : undefined);
+                    cache ? cache.solid : gerberFile.solid,
+                    cache ? cache.thin : gerberFile.thin,
+                    Color(layerColors[layer]));
                 newFileList.push(newGerberFile);
                 handled = true;
             } else {
@@ -181,7 +210,8 @@ class App extends React.Component<{}, AppState> {
                 false,
                 1,
                 cache ? cache.solid : undefined,
-                cache ? cache.thin : undefined);
+                cache ? cache.thin : undefined,
+                Color(layerColors[output.layer]));
             newFileList.push(newGerberFile);
         }
         if (output.status === 'error') {
@@ -213,67 +243,46 @@ class App extends React.Component<{}, AppState> {
     }
 
     onChangeLayer(fileName:string, layer:BoardLayer) {
-        let newFileList = this.state.layerList.map(gerberFile => {
+        let layerList = this.state.layerList.map(gerberFile => {
             if (gerberFile.fileName === fileName) {
-                return new LayerFile(
-                    gerberFile.fileName,
-                    gerberFile.boardSide,
-                    layer,
-                    gerberFile.status,
-                    gerberFile.content,
-                    gerberFile.polygons,
-                    gerberFile.selected, 
-                    gerberFile.opacity,
-                    gerberFile.solid,
-                    gerberFile.thin);
+                gerberFile.boardLayer = layer;
+                gerberFile.color = Color(layerColors[layer]);
             }
             return gerberFile;
         });
         ReactGA.event({ category:'User', action: 'change layer', label:fileName, value:layer });
-        this.setState({layerList:newFileList});
+        this.setState({layerList:layerList});
     }
 
     onChangeSide(fileName:string, side:BoardSide) {
-        let newFileList = this.state.layerList.map(gerberFile => {
+        let layerList = this.state.layerList.map(gerberFile => {
             if (gerberFile.fileName === fileName) {
-                return new LayerFile(
-                    gerberFile.fileName,
-                    side,
-                    gerberFile.boardLayer,
-                    gerberFile.status,
-                    gerberFile.content,
-                    gerberFile.polygons,
-                    gerberFile.selected,
-                    gerberFile.opacity,
-                    gerberFile.solid,
-                    gerberFile.thin);
+                gerberFile.boardSide = side;
             }
             return gerberFile;
         });
         ReactGA.event({ category:'User', action: 'change side', label:fileName, value:side });
-        this.setState({layerList:newFileList});
+        this.setState({layerList:layerList});
     }
 
     onChangeOpacity(fileName:string, opacity:number) {
-        let newFileList = this.state.layerList.map(gerberFile => {
+        let layerList = this.state.layerList.map(gerberFile => {
             if (gerberFile.fileName === fileName) {
-                return new LayerFile(
-                    gerberFile.fileName,
-                    gerberFile.boardSide,
-                    gerberFile.boardLayer,
-                    gerberFile.status,
-                    gerberFile.content,
-                    gerberFile.polygons,
-                    gerberFile.selected,
-                    opacity,
-                    gerberFile.solid,
-                    gerberFile.thin);
+                gerberFile.opacity = opacity;
             }
             return gerberFile;
         });
-        let selection = newFileList.filter(l => l.selected);
-        let bounds = calcBounds(selection);
-        this.setState({layerList:newFileList, selection:selection, bounds:bounds});
+        this.setState({layerList:layerList});
+    }
+
+    onChangeColor(fileName:string, color:Color) {
+        let layerList = this.state.layerList.map(gerberFile => {
+            if (gerberFile.fileName === fileName) {
+                gerberFile.color = color;
+            }
+            return gerberFile;
+        });
+        this.setState({layerList:layerList});
     }
 
     onClick(fileName:string) {
@@ -284,16 +293,18 @@ class App extends React.Component<{}, AppState> {
             return l;
         });
         let selection = layerList.filter(l => l.selected);
-        let bounds = calcBounds(selection);
-        this.setState({layerList:layerList, selection:selection, bounds:bounds});
+        this.setState({layerList:layerList, bounds:calcBounds(selection)});
     }
 
     render() {
         return <div style={{height:"100%", display:"flex", flexFlow:"column"}}>
-            <h4 style={{color: "coral"}}>
+            <div style={{color: "rgb(158, 1, 1)"}}>
+                Please try our free Gerber file (rs274-x) viewer. All files are processed in the browser by JavaScript code.
+            </div>
+            <div style={{color: "coral"}}>
                 This is experimental software. Functionality can change rapidly and without
-                notice. Bugs are very likely. <a href="https://goo.gl/forms/uXouJRtWRVEcTA983">Contact us.</a>
-            </h4>
+                notice. Bugs are very likely. <a href="https://goo.gl/forms/FWb0kufsdXdGO9Gt1">Contact us.</a>
+            </div>
             <FileOpenButton 
                 key="fileInput" 
                 onChange={(f) => this.handleChangeFile(f)}
@@ -311,7 +322,8 @@ class App extends React.Component<{}, AppState> {
                         onClick={(fileName) => this.onClick(fileName)}
                         onChangeLayer={(fileName, layer) => this.onChangeLayer(fileName, layer)}
                         onChangeSide={(fileName, side) => this.onChangeSide(fileName, side)}
-                        onChangeOpacity={(fileName, opacity) => this.onChangeOpacity(fileName, opacity)}/>
+                        onChangeOpacity={(fileName, opacity) => this.onChangeOpacity(fileName, opacity)}
+                        onChangeColor={(fileName, color) => this.onChangeColor(fileName, color)}/>
                     <span className="help" style={{fontSize:"12px"}}>
                         <br/>Pan: mouse down and dragg a point in the image
                         <br/>Zoom: use the mouse wheel

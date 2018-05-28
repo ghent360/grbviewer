@@ -7,6 +7,8 @@ import { LayerName } from "./LayerName";
 import { LayerSide } from "./LayerSide";
 import { BoardLayer, BoardSide } from "../../../grbparser/dist/gerberutils";
 import { LayerInfo } from "..";
+import { ColorPicker } from "./ColorPicker";
+import * as Color from 'color';
 
 export interface LayerListProps { 
     layers:Array<LayerInfo>;
@@ -14,13 +16,17 @@ export interface LayerListProps {
     onChangeLayer?:(fileName:string, layer:BoardLayer) => void;
     onChangeSide?:(fileName:string, side:BoardSide) => void;
     onChangeOpacity?:(fileName:string, opacity:number) => void;
+    onChangeColor?:(fileName:string, color:Color) => void;
     style?:React.CSSProperties;
 }
 
 export class LayerList extends React.Component<LayerListProps, {}> {
     private static LeftAlignText = { textAlign:"left" };
     private Columns:Array<ReactTable.Column> = [
-        { accessor: 'selected', Header:'', width:25, 
+        { 
+            accessor: 'selected',
+            Header:'',
+            width:25, 
             Cell: cell => <FontAwesomeIcon icon={(cell.value) ? faCheckSquare : faSquare}/>
         },
         { accessor: 'fileName', Header:'File Name', headerStyle:LayerList.LeftAlignText },
@@ -31,9 +37,9 @@ export class LayerList extends React.Component<LayerListProps, {}> {
             headerStyle:LayerList.LeftAlignText,
             width:120,
             Cell: cell =>
-            <LayerName layer={cell.value} onChange={(layer:BoardLayer) => {
-                this.changeLayer(cell.row.fileName, layer);
-            }}/>
+            <LayerName layer={cell.value} onChange={(layer:BoardLayer) =>
+                this.changeLayer(cell.row.fileName, layer)
+            }/>
         },
         {
             accessor: 'boardSide',
@@ -42,9 +48,17 @@ export class LayerList extends React.Component<LayerListProps, {}> {
             headerStyle:LayerList.LeftAlignText,
             width:110,
             Cell: cell => 
-            <LayerSide side={cell.value} onChange={(side:BoardSide) => {
-                this.changeSide(cell.row.fileName, side);
-            }}/>
+            <LayerSide side={cell.value} onChange={(side:BoardSide) => 
+                this.changeSide(cell.row.fileName, side)
+            }/>
+        },
+        {
+            accessor: 'color',
+            Header: ' ',
+            width:30,
+            Cell: cell => <ColorPicker color={cell.value as Color} onChange={
+                (color:Color) => this.changeColor(cell.row.fileName, color)
+            }/>
         },
         { 
             id:"status",
@@ -94,6 +108,12 @@ export class LayerList extends React.Component<LayerListProps, {}> {
     changeOpacity(fileName:string, opacity:number) {
         if (this.props.onChangeOpacity) {
             this.props.onChangeOpacity(fileName, opacity);
+        }
+    }
+
+    changeColor(fileName:string, color:Color) {
+        if (this.props.onChangeColor) {
+            this.props.onChangeColor(fileName, color);
         }
     }
 

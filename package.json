@@ -25,16 +25,20 @@
     "@types/react-data-grid": "^2.0.11",
     "@types/react-dom": "^16.0.5",
     "@types/react-table": "^6.7.11",
+    "color": "^3.0.0",
     "jszip": "^3.1.5",
     "pako": "^1.0.6",
     "react": "^16.4.0",
+    "react-color": "^2.14.1",
     "react-dom": "^16.4.0",
     "react-dropdown": "^1.5.0",
     "react-ga": "^2.5.3",
     "react-table": "^6.8.6",
-    "svg.js": "^2.6.4"
+    "svg.js": "^2.6.5"
   },
   "devDependencies": {
+    "@types/color": "^3.0.0",
+    "@types/react-color": "^2.13.5",
     "awesome-typescript-loader": "^5.0.0-1",
     "babel-core": "^6.26.3",
     "babel-polyfill": "^6.26.0",

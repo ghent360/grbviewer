@@ -1,7 +1,7 @@
 import * as React from "react";
 import { GerberPolygons, Bounds } from "../../common/AsyncGerberParserAPI";
 import { BoardLayer } from "../../../grbparser/dist/gerberutils";
-import { LayerInfo } from "..";
+import { LayerInfo, colorFR4 } from "..";
 
 export interface CanvasViewerProps { 
     layers?: Array<LayerInfo>;
@@ -42,29 +42,6 @@ function colorToHtml(clr:number):string {
         + toString2(clr & 0xff);
     return ss;
 }
-
-// Oshpark mask #2b1444
-//
-// FR4 #ab9f15
-const colorFR4 = '#ab9f15';
-const colorENIG = '#d8bf8a';
-const colorHASL = '#cad4c9';
-const colorGreen = '#0e8044';
-
-const layerColors = {
-    0:"#e9b397",    // Copper
-    1:colorENIG,    // SolderMask
-    2:"white",      // Silk // #c2d3df
-    3:"silver",     // Paste
-    4:"white",      // Drill
-    5:"black",      // Mill
-    6:"black",      // Outline
-    7:"carbon",     // Carbon
-    8:"green",      // Notes
-    9:"yellow",     // Assembly
-    10:"brown",     // Mechanical
-    11:"black",     // Unknown
-};
 
 export class CanvasViewer extends React.Component<CanvasViewerProps, CanvasViewerState> {
     private redrawTimer:any;
@@ -134,6 +111,7 @@ export class CanvasViewer extends React.Component<CanvasViewerProps, CanvasViewe
     
     componentDidMount() {
         this.handleResize(false);
+        // TODO: add ResizeObservable to habdle all element resize notifications
         window.addEventListener('resize', this.handleResize.bind(this));
         let canvas = this.refs.canvas as HTMLCanvasElement;
         canvas.addEventListener('wheel', this.handleWheel.bind(this));
@@ -141,13 +119,11 @@ export class CanvasViewer extends React.Component<CanvasViewerProps, CanvasViewe
         canvas.addEventListener('mousedown', this.handleMouseDn.bind(this));
         canvas.addEventListener('mousemove', this.handleMouseMove.bind(this));
         canvas.addEventListener('mouseup', this.handleMouseUp.bind(this));
-        canvas.addEventListener('resize', this.handleResize.bind(this));
         this.clearCashedImage();
     }
 
     componentWillUnmount() {
         let canvas = this.refs.canvas as HTMLCanvasElement;
-        canvas.removeEventListener('resize', this.handleResize);
         window.removeEventListener('keypress', this.handleKey);
         canvas.removeEventListener('wheel', this.handleWheel);
         canvas.removeEventListener('mousedown', this.handleMouseDn);
@@ -237,18 +213,18 @@ export class CanvasViewer extends React.Component<CanvasViewerProps, CanvasViewe
         }
     }
 
-    getSolidColor(layer:BoardLayer) {
+    getSolidColor(layer:LayerInfo):string {
         if (this.state.selection.length == 1) {
             return colorToHtml(this.props.layerColor);
         }
-        return layerColors[layer];
+        return layer.color.hex();
     }
 
-    getBorderColor(layer:BoardLayer) {
+    getBorderColor(layer:LayerInfo):string {
         if (this.state.selection.length == 1) {
             return colorToHtml(this.props.layerColor);
         }
-        return layerColors[layer];
+        return layer.color.hex();
     }
 
     clearCanvas(context:CanvasRenderingContext2D) {
@@ -341,7 +317,7 @@ export class CanvasViewer extends React.Component<CanvasViewerProps, CanvasViewe
                         context.fillStyle = 'rgba(32, 2, 94, 0.7)'; // target color #2b1444
                         outline.forEach(p => context.fill(p));
                     }
-                    context.fillStyle = this.getSolidColor(l.boardLayer);
+                    context.fillStyle = this.getSolidColor(l);
                     context.fill(path);
                 }
                 path = l.thin;
@@ -349,7 +325,7 @@ export class CanvasViewer extends React.Component<CanvasViewerProps, CanvasViewe
                     // Set line width to 1 pixel. The width is scaled with the transform, so
                     // 1/scale ends up being 1px.
                     context.lineWidth = 1/scale;
-                    context.strokeStyle = this.getBorderColor(l.boardLayer);
+                    context.strokeStyle = this.getBorderColor(l);
                     context.stroke(path);
                 }
             });
