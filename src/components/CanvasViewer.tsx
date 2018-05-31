@@ -199,7 +199,7 @@ export class CanvasViewer extends React.Component<CanvasViewerProps, CanvasViewe
     handleResize(evt:any) {
         let canvas = this.refs.canvas as HTMLCanvasElement;
         if (canvas) {
-            console.log(`Canvas size ${canvas.clientWidth}x${canvas.clientHeight}`);
+            //console.log(`Canvas size ${canvas.clientWidth}x${canvas.clientHeight}`);
             let width = canvas.clientWidth * this.state.pixelRatio;
             let height = canvas.clientHeight * this.state.pixelRatio;
             canvas.width = width;
