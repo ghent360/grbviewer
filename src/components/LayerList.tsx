@@ -1,6 +1,6 @@
 import * as React from "react";
 import * as ReactTable from "react-table";
-import FontAwesomeIcon from "@fortawesome/react-fontawesome";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSquare, faCheckSquare } from "@fortawesome/fontawesome-free-regular";
 import '../../css/react-table.css';
 import { LayerName } from "./LayerName";
