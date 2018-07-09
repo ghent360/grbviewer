@@ -1,4 +1,4 @@
-import {WorkerInput, WorkerResult, GerberParserOutput} from "../common/AsyncGerberParserAPI";
+import {WorkerInput, WorkerResult, GerberParserOutput, GerberParserInput} from "../common/AsyncGerberParserAPI";
 
 export class AsyncWorker<I, O> {
     protected worker:Worker;
@@ -30,7 +30,7 @@ export class AsyncWorker<I, O> {
     }
 }
 
-export class AsyncGerberParserInterface extends AsyncWorker<ArrayBuffer, GerberParserOutput>{
+export class AsyncGerberParserInterface extends AsyncWorker<GerberParserInput, GerberParserOutput>{
     constructor() {
         super();
         this.worker = new Worker("AsyncGerberParser.worker.js");

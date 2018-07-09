@@ -328,6 +328,16 @@ export class CanvasViewer extends React.Component<CanvasViewerProps, CanvasViewe
                     context.strokeStyle = this.getBorderColor(l);
                     context.stroke(path);
                 }
+                if (l.holes != undefined) {
+                    context.lineWidth = 0;
+                    context.globalAlpha = l.opacity;
+                    context.fillStyle = this.getSolidColor(l);
+                    l.holes.holes.forEach(hole => {
+                        context.beginPath();
+                        context.arc(hole.x, hole.y, hole.drillSize / 2, 0, Math.PI * 2);
+                        context.fill();
+                    });
+                }
             });
         }
     }

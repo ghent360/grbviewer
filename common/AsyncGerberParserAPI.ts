@@ -1,4 +1,5 @@
 import {BoardSide, BoardLayer} from "grbparser/dist/gerberutils";
+import {DrillHole} from "grbparser/dist/excellonparser";
 
 export class WorkerInput<I> {
     constructor(
@@ -28,6 +29,21 @@ export interface GerberPolygons {
     readonly bounds: Bounds;
 }
 
+export interface ExcellonHoles {
+    readonly holes: Array<DrillHole>;
+    readonly bounds: Bounds;
+}
+
+export interface FileContent {
+    readonly fileName:string;
+    readonly content:string;
+}
+
+export interface GerberParserInput {
+    readonly zipFileBuffer?:ArrayBuffer;
+    readonly files?:Array<FileContent>;
+}
+
 export class GerberParserOutput {
     constructor(
         readonly fileName:string,
@@ -36,6 +52,7 @@ export class GerberParserOutput {
         readonly layer?:BoardLayer,
         readonly content?:string,
         readonly gerber?:GerberPolygons,
+        readonly holes?:ExcellonHoles,
         readonly exception?:string,
         readonly unzipTime?:number,
         readonly renderTime?:number) {

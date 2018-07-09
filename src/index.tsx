@@ -6,12 +6,13 @@ import {LayerName} from "./components/LayerName";
 import {FileOpenButton} from "./components/FileOpenButton";
 import {CanvasViewer} from "./components/CanvasViewer";
 import * as ReactGA from 'react-ga';
-import {GerberPolygons, Bounds, GerberParserOutput} from "../common/AsyncGerberParserAPI";
+import {GerberPolygons, Bounds, GerberParserOutput, ExcellonHoles, FileContent} from "../common/AsyncGerberParserAPI";
 import {Build} from "../common/build";
 import {BoardLayer, BoardSide} from "../../grbparser/dist/gerberutils";
 import {AsyncGerberParserInterface} from "./AsyncGerberParser";
 import {LayerList} from "./components/LayerList";
 import * as Color from 'color';
+import { DrillHole } from "grbparser/dist/excellonparser";
 
 export interface LayerInfo {
     readonly fileName:string;
@@ -19,6 +20,7 @@ export interface LayerInfo {
     readonly boardSide:BoardSide,
     readonly status:string;
     readonly polygons:GerberPolygons,
+    readonly holes:ExcellonHoles,
     readonly content:string,
     readonly selected:boolean;
     readonly opacity:number;
@@ -58,6 +60,7 @@ class LayerFile implements LayerInfo {
         public status:string,
         public content:string,
         public polygons:GerberPolygons,
+        public holes:ExcellonHoles,
         public selected:boolean,
         public opacity:number,
         public solid:Path2D,
@@ -110,9 +113,19 @@ function calcBounds(selection:Array<LayerInfo>):Bounds {
     if (selection.length == 0) {
         return undefined;
     }
-    let result:{minx:number, miny:number, maxx:number, maxy:number} = selection[0].polygons.bounds;
-    selection.slice(1).forEach(o => {
-        let bounds = o.polygons.bounds;
+    let result = {
+        minx:Number.MAX_SAFE_INTEGER,
+        miny:Number.MAX_SAFE_INTEGER,
+        maxx:Number.MIN_SAFE_INTEGER,
+        maxy:Number.MIN_SAFE_INTEGER,
+    };
+    selection.forEach(o => {
+        let bounds:Bounds;
+        if (o.polygons) {
+            bounds = o.polygons.bounds;
+        }else if (o.holes) {
+            bounds = o.holes.bounds;
+        }
         if (bounds.minx < result.minx) {
             result.minx = bounds.minx;
         }
@@ -127,6 +140,51 @@ function calcBounds(selection:Array<LayerInfo>):Bounds {
         }
     });
     return result;
+}
+
+class FileReaderList {
+    private incomplete:number;
+    private content:Map<string, string> = new Map();
+    private result:Array<FileContent> = [];
+
+    constructor(readonly files:Array<File>) {
+        this.incomplete = files.length;
+        console.log(`created file reader for ${this.incomplete} files`);
+    }
+
+    read(cb:(contnent:Array<FileContent>) => void) {
+        this.files.forEach(file => {
+            let reader = new FileReader();
+            reader.onload = (e:ProgressEvent) => {
+                this.content.set(file.name, reader.result);
+                this.incomplete--;
+                if (this.incomplete == 0) {
+                    this.content.forEach((v:string, k:string) => {
+                        this.result.push({fileName:k, content:v});
+                    });
+                    if (cb) {
+                        cb(this.result);
+                    }
+                }
+            };
+            reader.onerror = (e:any) => {
+                console.log("Error: " + e.error);
+                ReactGA.exception({
+                    description: 'Read input file error.',
+                    fatal: true
+                });
+            }
+            reader.readAsText(file);
+        });
+    }
+
+    isComplete() {
+        return this.incomplete > 0;
+    }
+
+    getResult():Array<FileContent> {
+        return this.result;
+    }
 }
 
 class App extends React.Component<{}, AppState> {
@@ -160,6 +218,24 @@ class App extends React.Component<{}, AppState> {
         reader.readAsArrayBuffer(file);
     }
 
+    readFiles(files:Array<File>) {
+        ReactGA.event({ category:'User', action: `Open ${files.length} files`});
+        let reader = new FileReaderList(files);
+        reader.read((content:Array<FileContent>) => this.processFiles(content));
+    }
+
+    processFiles(content:Array<FileContent>) {
+        this.setState({layerList:[], bounds:undefined});
+        // Kill the old processing thread
+        if (this.gerberParser) {
+            this.gerberParser.terminate();
+        }
+        this.gerberParser = new AsyncGerberParserInterface();
+        console.log(`scheduling work`);
+        this.gerberParser.scheduleWork(
+            {files:content}, (output) => this.processGerberOutput(output));
+    }
+
     processZipFile(stream:ArrayBuffer):void {
         this.setState({layerList:[], bounds:undefined});
         // Kill the old processing thread
@@ -167,7 +243,8 @@ class App extends React.Component<{}, AppState> {
             this.gerberParser.terminate();
         }
         this.gerberParser = new AsyncGerberParserInterface();
-        this.gerberParser.scheduleWork(stream, (output) => this.processGerberOutput(output));
+        this.gerberParser.scheduleWork(
+            {zipFileBuffer:stream}, (output) => this.processGerberOutput(output));
     }
 
     processGerberOutput(output:GerberParserOutput) {
@@ -187,6 +264,7 @@ class App extends React.Component<{}, AppState> {
                     output.status,
                     output.content ? output.content : gerberFile.content,
                     output.gerber,
+                    output.holes,
                     false,
                     1,
                     cache ? cache.solid : gerberFile.solid,
@@ -207,6 +285,7 @@ class App extends React.Component<{}, AppState> {
                 output.status,
                 output.content,
                 output.gerber,
+                output.holes,
                 false,
                 1,
                 cache ? cache.solid : undefined,
@@ -296,8 +375,48 @@ class App extends React.Component<{}, AppState> {
         this.setState({layerList:layerList, bounds:calcBounds(selection)});
     }
 
+    onDrop(ev:React.DragEvent<HTMLDivElement>) {
+        ev.preventDefault();
+        let files:Array<File> = [];
+        if (ev.dataTransfer.items) {
+            // Use DataTransferItemList interface to access the file(s)
+
+            for (let i = 0; i < ev.dataTransfer.items.length; i++) {
+                if (ev.dataTransfer.items[i].kind === 'file') {
+                    files.push(ev.dataTransfer.items[i].getAsFile());
+                }
+            }
+        } else {
+            // Use DataTransfer interface to access the file(s)
+            for (let i = 0; i < ev.dataTransfer.files.length; i++) {
+                files.push(ev.dataTransfer.files[i]);
+            }
+        }
+        if (files.length == 1) {
+            this.readZipFile(files[0]);
+        } else {
+            this.readFiles(files);
+        }
+        
+        // Pass event to removeDragData for cleanup
+        this.removeDragData(ev)
+    }
+
+    removeDragData(ev) {
+        console.log('Removing drag data')
+        if (ev.dataTransfer.items) {
+          // Use DataTransferItemList interface to remove the drag data
+          ev.dataTransfer.items.clear();
+        } else {
+          // Use DataTransfer interface to remove the drag data
+          ev.dataTransfer.clearData();
+        }
+    }
+
     render() {
-        return <div style={{height:"100%", display:"flex", flexFlow:"column"}}>
+        return <div style={{height:"100%", display:"flex", flexFlow:"column"}} 
+            onDragOver={(ev) => ev.preventDefault()}
+            onDrop={(ev) => this.onDrop(ev)}>
             <div style={{color: "rgb(158, 1, 1)"}}>
                 Please try our free Gerber file (rs274-x) viewer. All files are processed in the browser by JavaScript code.
             </div>
