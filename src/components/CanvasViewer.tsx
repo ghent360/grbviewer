@@ -29,6 +29,7 @@ interface CanvasViewerState {
     offsetX:number;
     offsetY:number;
     hFlip:boolean;
+    vFlip:boolean;
 }
 
 function toString2(n:number):string {
@@ -66,7 +67,8 @@ export class CanvasViewer extends React.Component<CanvasViewerProps, CanvasViewe
             offsetX:0,
             offsetY:0,
             selection: props.layers ? props.layers.filter(l => l.selected) : undefined,
-            hFlip:false
+            hFlip:false,
+            vFlip:true
         }
         this.scale = 1;
         this.offsetX = 0;
@@ -178,10 +180,15 @@ export class CanvasViewer extends React.Component<CanvasViewerProps, CanvasViewe
                 offsetX: 0,
                 offsetY: 0
             });
-        } else if (evt.key == "f") {
+        } else if (evt.key == "f" || evt.key == 'h') {
             this.clearCashedImage();
             this.setState({
                 hFlip:!this.state.hFlip
+            });
+        } else if (evt.key == "v") {
+            this.clearCashedImage();
+            this.setState({
+                vFlip:!this.state.vFlip
             });
         }
     }
@@ -305,13 +312,27 @@ export class CanvasViewer extends React.Component<CanvasViewerProps, CanvasViewe
             let originX = (width - this.state.contentSize.contentWidth * scale) / 2;
             let originY = (height - this.state.contentSize.contentHeight * scale) / 2;
             // Flip the Y axis
+            let xtranslate:number;
+            let ytranslate:number;
+            let xscale:number;
+            let yscale:number;
+
             if (this.state.hFlip) {
-                context.translate(this.state.width - originX, this.state.height - originY);
-                context.scale(-scale, -scale);
+                xtranslate = this.state.width - originX;
+                xscale = -scale;
             } else {
-                context.translate(originX, this.state.height - originY);
-                context.scale(scale, -scale);
+                xtranslate = originX;
+                xscale = scale;
             }
+            if (this.state.vFlip) {
+                ytranslate = this.state.height - originY;
+                yscale = -scale;
+            } else {
+                ytranslate = originY;
+                yscale = scale;
+            }
+            context.translate(xtranslate, ytranslate);
+            context.scale(xscale, yscale);
             context.translate(
                 -this.state.contentSize.contentMinX,
                 -this.state.contentSize.contentMinY);
