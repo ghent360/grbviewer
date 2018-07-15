@@ -28,6 +28,7 @@ interface CanvasViewerState {
     scale:number;
     offsetX:number;
     offsetY:number;
+    hFlip:boolean;
 }
 
 function toString2(n:number):string {
@@ -65,6 +66,7 @@ export class CanvasViewer extends React.Component<CanvasViewerProps, CanvasViewe
             offsetX:0,
             offsetY:0,
             selection: props.layers ? props.layers.filter(l => l.selected) : undefined,
+            hFlip:false
         }
         this.scale = 1;
         this.offsetX = 0;
@@ -175,6 +177,11 @@ export class CanvasViewer extends React.Component<CanvasViewerProps, CanvasViewe
                 scale:1.0,
                 offsetX: 0,
                 offsetY: 0
+            });
+        } else if (evt.key == "f") {
+            this.clearCashedImage();
+            this.setState({
+                hFlip:!this.state.hFlip
             });
         }
     }
@@ -298,8 +305,13 @@ export class CanvasViewer extends React.Component<CanvasViewerProps, CanvasViewe
             let originX = (width - this.state.contentSize.contentWidth * scale) / 2;
             let originY = (height - this.state.contentSize.contentHeight * scale) / 2;
             // Flip the Y axis
-            context.translate(originX, this.state.height - originY);
-            context.scale(scale, -scale);
+            if (this.state.hFlip) {
+                context.translate(this.state.width - originX, this.state.height - originY);
+                context.scale(-scale, -scale);
+            } else {
+                context.translate(originX, this.state.height - originY);
+                context.scale(scale, -scale);
+            }
             context.translate(
                 -this.state.contentSize.contentMinX,
                 -this.state.contentSize.contentMinY);

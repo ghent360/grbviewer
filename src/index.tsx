@@ -446,6 +446,7 @@ class App extends React.Component<{}, AppState> {
                     <span className="help" style={{fontSize:"12px"}}>
                         <br/>Pan: mouse down and dragg a point in the image
                         <br/>Zoom: use the mouse wheel
+                        <br/>press 'f' for a horizontal flip (if the text on the layer appears backwards)
                         <br/>Reset: press the 'z' key to reset the view
                     </span>
                 </div>
