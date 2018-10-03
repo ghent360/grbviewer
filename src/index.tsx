@@ -156,7 +156,7 @@ class FileReaderList {
         this.files.forEach(file => {
             let reader = new FileReader();
             reader.onload = (e:ProgressEvent) => {
-                this.content.set(file.name, reader.result);
+                this.content.set(file.name, reader.result as string);
                 this.incomplete--;
                 if (this.incomplete == 0) {
                     this.content.forEach((v:string, k:string) => {
@@ -206,7 +206,7 @@ class App extends React.Component<{}, AppState> {
         ReactGA.event({ category:'User', action: 'Open a file'});
         let reader = new FileReader();
         reader.onload = (e:ProgressEvent) => {
-            this.processZipFile(reader.result);
+            this.processZipFile(reader.result as ArrayBuffer);
         };
         reader.onerror = (e:any) => {
             console.log("Error: " + e.error);
