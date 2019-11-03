@@ -418,11 +418,10 @@ class App extends React.Component<{}, AppState> {
             onDragOver={(ev) => ev.preventDefault()}
             onDrop={(ev) => this.onDrop(ev)}>
             <div style={{color: "rgb(158, 1, 1)"}}>
-                Please try our free Gerber file (rs274-x) viewer. All files are processed in the browser by JavaScript code.
+                Please try our free Gerber file (rs274-x) viewer. All data is processed in the browser.
             </div>
             <div style={{color: "coral"}}>
-                This is experimental software. Functionality can change rapidly and without
-                notice. Bugs are very likely. <a href="https://goo.gl/forms/FWb0kufsdXdGO9Gt1">Contact us.</a>
+                This is experimental software.<a href="https://goo.gl/forms/FWb0kufsdXdGO9Gt1">Contact us.</a>
             </div>
             <FileOpenButton 
                 key="fileInput" 
