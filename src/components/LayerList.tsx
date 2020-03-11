@@ -1,5 +1,5 @@
 import * as React from "react";
-import * as ReactTable from "react-table";
+import * as ReactTable from "react-table-6";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSquare, faCheckSquare } from "@fortawesome/free-regular-svg-icons";
 import { IconName, IconLookup } from '@fortawesome/fontawesome-svg-core';
@@ -30,7 +30,9 @@ export class LayerList extends React.Component<LayerListProps, {}> {
             width:25, 
             Cell: cell => <FontAwesomeIcon icon={(cell.value) ? faCheckSquare : faSquare}/>
         },
-        { accessor: 'fileName', Header:'File Name', headerStyle:LayerList.LeftAlignText },
+        { 
+            accessor: 'fileName', Header:'File Name',
+            headerStyle:LayerList.LeftAlignText},
         { 
             accessor: 'boardLayer',
             Header:'Layer',
