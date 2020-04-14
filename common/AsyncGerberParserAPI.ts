@@ -1,5 +1,6 @@
 import {BoardSide, BoardLayer} from "grbparser/dist/gerberutils";
 import {DrillHole} from "grbparser/dist/excellonparser";
+import {ComponentPosition} from "grbparser/dist/kicadcentroidparser";
 
 export class WorkerInput<I> {
     constructor(
@@ -34,6 +35,11 @@ export interface ExcellonHoles {
     readonly bounds: Bounds;
 }
 
+export interface ComponentCenters {
+    readonly centers: Array<ComponentPosition>;
+    readonly bounds: Bounds;
+}
+
 export interface FileContent {
     readonly fileName:string;
     readonly content:string;
@@ -53,6 +59,7 @@ export class GerberParserOutput {
         readonly content?:string,
         readonly gerber?:GerberPolygons,
         readonly holes?:ExcellonHoles,
+        readonly centers?:ComponentCenters,
         readonly exception?:string,
         readonly unzipTime?:number,
         readonly renderTime?:number) {

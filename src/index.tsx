@@ -6,7 +6,7 @@ import {LayerName} from "./components/LayerName";
 import {FileOpenButton} from "./components/FileOpenButton";
 import {CanvasViewer} from "./components/CanvasViewer";
 import * as ReactGA from 'react-ga';
-import {GerberPolygons, Bounds, GerberParserOutput, ExcellonHoles, FileContent} from "../common/AsyncGerberParserAPI";
+import {GerberPolygons, Bounds, GerberParserOutput, ExcellonHoles, ComponentCenters,FileContent} from "../common/AsyncGerberParserAPI";
 import {Build} from "../common/build";
 import {BoardLayer, BoardSide} from "../../grbparser/dist/gerberutils";
 import {AsyncGerberParserInterface} from "./AsyncGerberParser";

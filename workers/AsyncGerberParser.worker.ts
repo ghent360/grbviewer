@@ -1,10 +1,9 @@
 import {GerberToPolygons, Init, PolygonConverterResult} from "grbparser/dist/converters";
-import {Point} from "grbparser/dist/point";
-import {PolygonSet, Polygon} from "grbparser/dist/polygonSet";
 import {BoardLayer, BoardSide, GerberUtils, BoardFileType} from "grbparser/dist/gerberutils";
-import {ExcellonParser, DrillHole} from "grbparser/dist/excellonparser";
+import {ExcellonParser} from "grbparser/dist/excellonparser";
+import {KicadCentroidParser, KicadCentroidParserResult} from "grbparser/dist/kicadcentroidparser";
 import * as JSZip from "jszip";
-import {WorkerInput, GerberParserOutput, WorkerResult, ExcellonHoles, GerberParserInput} from "../common/AsyncGerberParserAPI";
+import {WorkerInput, GerberParserOutput, WorkerResult, ExcellonHoles, ComponentCenters, GerberParserInput} from "../common/AsyncGerberParserAPI";
 import {Build} from "../common/build";
 
 const ctx: Worker = self as any;
@@ -12,6 +11,7 @@ const ctx: Worker = self as any;
 interface ProcessingData {
     gerber?:PolygonConverterResult;
     holes?:ExcellonHoles;
+    centers?:ComponentCenters;
     content?:string;
     side?:BoardSide;
     layer?:BoardLayer;
@@ -80,6 +80,34 @@ class GerberRenderer {
         }
     }
 
+    centroidFile(fileName:string, content:string, unzipDuration:number) {
+        try {
+            //console.log(`Parsing '${fileName}'`);
+            let renderStart = performance.now();
+            let parser = new KicadCentroidParser();
+            parser.parseBlock(content);
+            parser.flush();
+            let renderEnd = performance.now();
+            let status = 'done';
+            let centers = parser.result();
+            if (centers.components.length == 0) {
+               status = 'empty';
+            }
+            this.postStatusUpdate(fileName, status, {
+               side:centers.side,
+               gerber:undefined,
+               centers:{centers:centers.components,bounds:centers.bounds},
+               unzipTime:unzipDuration,
+               renderTime:renderEnd - renderStart });
+        } catch (e) {
+            console.log(`Exception processing ${fileName}: ${e}`);
+            this.postStatusUpdate(fileName, "error", {
+                exception:e.toString(),
+                unzipTime:unzipDuration
+            });
+        }
+    }
+
     processZipFiles(zip:JSZip) {
         for(let fileName in zip.files) {
             let zipObject = zip.files[fileName];
@@ -116,6 +144,8 @@ class GerberRenderer {
                         this.postStatusUpdate(
                             fileName, "Rendering", {side:fileInfo.side, layer:fileInfo.layer});
                         this.excellonFile(fileName, content, endUnzip - startUnzip);
+                    } else if (fileType == BoardFileType.Centroid) {
+                        this.centroidFile(fileName, content, endUnzip - startUnzip);
                     } else {
                         this.gerberToPolygons(fileName, content, endUnzip - startUnzip);
                     }
@@ -156,6 +186,8 @@ class GerberRenderer {
                     this.postStatusUpdate(
                         fileName, "Rendering", {side:fileInfo.side, layer:fileInfo.layer});
                     this.excellonFile(fileName, file.content, -1);
+                } else if (fileType == BoardFileType.Centroid) {
+                    this.centroidFile(fileName, file.content, -1);
                 } else {
                     this.gerberToPolygons(fileName, file.content, -1);
                 }
@@ -172,6 +204,7 @@ class GerberRenderer {
             data.content,
             data.gerber,
             data.holes,
+            data.centers,
             data.exception,
             data.unzipTime,
             data.renderTime);
