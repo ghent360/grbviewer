@@ -10,7 +10,7 @@ gsutil -m setmeta \
 gsutil -m setmeta \
 	-h "Content-Type: application/wasm" \
 	-h "Cache-control: no-transform, max-age=3600" \
-	gs://www.pcbxprt.com/*.js
+	gs://www.pcbxprt.com/*.wasm
 
 gsutil acl ch -u AllUsers:R gs://www.pcbxprt.com/*
 echo all done!!!

@@ -169,10 +169,10 @@ class FileReaderList {
             };
             reader.onerror = (e:any) => {
                 console.log("Error: " + e.error);
-                ReactGA.exception({
+                /*ReactGA.exception({
                     description: 'Read input file error.',
                     fatal: true
-                });
+                });*/
             }
             reader.readAsText(file);
         });
@@ -203,23 +203,21 @@ class App extends React.Component<{}, AppState> {
     }
 
     readZipFile(file:File):void {
-        ReactGA.event({ category:'User', action: 'Open a file'});
         let reader = new FileReader();
         reader.onload = (e:ProgressEvent) => {
             this.processZipFile(reader.result as ArrayBuffer);
         };
         reader.onerror = (e:any) => {
             console.log("Error: " + e.error);
-            ReactGA.exception({
+            /*ReactGA.exception({
                 description: 'Read input file error.',
                 fatal: true
-            });
+            });*/
         }
         reader.readAsArrayBuffer(file);
     }
 
     readFiles(files:Array<File>) {
-        ReactGA.event({ category:'User', action: `Open ${files.length} files`});
         let reader = new FileReaderList(files);
         reader.read((content:Array<FileContent>) => this.processFiles(content));
     }
@@ -295,28 +293,10 @@ class App extends React.Component<{}, AppState> {
         }
         if (output.status === 'error') {
             console.log(`Reporting error ${output.exception}`);
-            ReactGA.exception({
+            /*ReactGA.exception({
                 description: `Rendering error: ${output.exception}`,
                 fatal: true
-            });
-        } else if (output.status === 'done') {
-            ReactGA.event({ category:'User', action: 'render gerber', label:output.fileName});
-        }
-        if (output.unzipTime) {
-            ReactGA.timing({
-                category: 'Processing',
-                variable: 'unzip',
-                value: output.unzipTime, // in milliseconds
-                label: 'JSZip'
-            });
-        }
-        if (output.renderTime) {
-            ReactGA.timing({
-                category: 'Processing',
-                variable: 'render',
-                value: output.renderTime, // in milliseconds
-                label: 'grbparser'
-            });
+            });*/
         }
         this.setState({layerList:newFileList});
     }
@@ -329,7 +309,7 @@ class App extends React.Component<{}, AppState> {
             }
             return gerberFile;
         });
-        ReactGA.event({ category:'User', action: 'change layer', label:fileName, value:layer });
+        //ReactGA.event({ category:'User', action: 'change layer', label:fileName, value:layer });
         this.setState({layerList:layerList});
     }
 
@@ -340,7 +320,7 @@ class App extends React.Component<{}, AppState> {
             }
             return gerberFile;
         });
-        ReactGA.event({ category:'User', action: 'change side', label:fileName, value:side });
+        //ReactGA.event({ category:'User', action: 'change side', label:fileName, value:side });
         this.setState({layerList:layerList});
     }
 
