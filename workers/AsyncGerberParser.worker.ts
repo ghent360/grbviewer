@@ -65,8 +65,8 @@ class GerberRenderer {
             let holes = parser.result();
             if (holes.holes.length == 0) {
                status = 'empty';
-           }
-           this.postStatusUpdate(fileName, status, {
+            }
+            this.postStatusUpdate(fileName, status, {
                gerber:undefined,
                holes:holes,
                unzipTime:unzipDuration,

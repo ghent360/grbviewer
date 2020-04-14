@@ -21,6 +21,7 @@ export interface LayerInfo {
     readonly status:string;
     readonly polygons:GerberPolygons,
     readonly holes:ExcellonHoles,
+    readonly centers:ComponentCenters;
     readonly content:string,
     readonly selected:boolean;
     readonly opacity:number;
@@ -61,6 +62,7 @@ class LayerFile implements LayerInfo {
         public content:string,
         public polygons:GerberPolygons,
         public holes:ExcellonHoles,
+        public centers:ComponentCenters,
         public selected:boolean,
         public opacity:number,
         public solid:Path2D,
@@ -123,8 +125,10 @@ function calcBounds(selection:Array<LayerInfo>):Bounds {
         let bounds:Bounds;
         if (o.polygons) {
             bounds = o.polygons.bounds;
-        }else if (o.holes) {
+        } else if (o.holes) {
             bounds = o.holes.bounds;
+        } else if (o.centers) {
+            bounds = o.centers.bounds;
         }
         if (bounds.minx < result.minx) {
             result.minx = bounds.minx;
@@ -263,6 +267,7 @@ class App extends React.Component<{}, AppState> {
                     output.content ? output.content : gerberFile.content,
                     output.gerber,
                     output.holes,
+                    output.centers,
                     false,
                     1,
                     cache ? cache.solid : gerberFile.solid,
@@ -284,6 +289,7 @@ class App extends React.Component<{}, AppState> {
                 output.content,
                 output.gerber,
                 output.holes,
+                output.centers,
                 false,
                 1,
                 cache ? cache.solid : undefined,

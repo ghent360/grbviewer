@@ -358,6 +358,7 @@ export class CanvasViewer extends React.Component<CanvasViewerProps, CanvasViewe
                     // Set line width to 1 pixel. The width is scaled with the transform, so
                     // 1/scale ends up being 1px.
                     context.lineWidth = 1/scale;
+                    context.globalAlpha = l.opacity;
                     context.strokeStyle = this.getBorderColor(l);
                     context.stroke(path);
                 }
@@ -369,6 +370,20 @@ export class CanvasViewer extends React.Component<CanvasViewerProps, CanvasViewe
                         context.beginPath();
                         context.arc(hole.x, hole.y, hole.drillSize / 2, 0, Math.PI * 2);
                         context.fill();
+                    });
+                }
+                if (l.centers != undefined) {
+                    context.lineWidth = 1/scale;
+                    context.globalAlpha = l.opacity;
+                    context.strokeStyle = this.getBorderColor(l);
+                    const size = 10 / scale;
+                    l.centers.centers.forEach(cmp => {
+                        context.beginPath();
+                        context.moveTo(cmp.center.x - size/2, cmp.center.y);
+                        context.lineTo(cmp.center.x + size/2, cmp.center.y);
+                        context.moveTo(cmp.center.x, cmp.center.y - size/2);
+                        context.lineTo(cmp.center.x, cmp.center.y + size/2);
+                        context.stroke();
                     });
                 }
             });
