@@ -1,6 +1,6 @@
 import * as React from "react";
-import { GerberPolygons, Bounds } from "../../common/AsyncGerberParserAPI";
-import { BoardLayer } from "../../../grbparser/dist/gerberutils";
+import { Bounds } from "../../common/AsyncGerberParserAPI";
+import { BoardLayer, BoardSide } from "../../../grbparser/dist/gerberutils";
 import { LayerInfo, colorFR4 } from "..";
 
 export interface CanvasViewerProps { 
@@ -269,6 +269,22 @@ export class CanvasViewer extends React.Component<CanvasViewerProps, CanvasViewe
         let outlineLayers = selection.filter(l => l.boardLayer == BoardLayer.Outline);
         let filledOutline = false;
         let outline:Array<Path2D> = [];
+        /*
+        if (outlineLayers.length == 0) {
+            outlineLayers = this.props.layers.filter(
+                l => l.boardLayer == BoardLayer.Copper && l.boardSide == BoardSide.Top && l.thin);
+            if (outlineLayers.length == 0) {
+                outlineLayers = this.props.layers.filter(
+                    l => l.boardLayer == BoardLayer.Copper && l.thin);
+                if (outlineLayers.length > 1) {
+                    outlineLayers = [outlineLayers[0]];
+                }
+            }
+        }
+        */
+        if (outlineLayers.length == 0) {
+            outlineLayers = this.props.layers.filter(l => l.boardLayer == BoardLayer.Mill);
+        }
         if (outlineLayers.length > 0) {
             outlineLayers.forEach(o => {
                 let path:Path2D = o.thin;

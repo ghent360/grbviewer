@@ -154,7 +154,8 @@ class GerberRenderer {
                         this.gerberToPolygons(
                             fileName,
                             content,
-                            fileInfo.layer == BoardLayer.Outline,
+                            fileInfo.layer == BoardLayer.Outline ||
+                            fileInfo.layer == BoardLayer.Mill,
                             endUnzip - startUnzip);
                     }
                 });
@@ -200,7 +201,8 @@ class GerberRenderer {
                     this.gerberToPolygons(
                         fileName,
                         file.content,
-                        fileInfo.layer == BoardLayer.Outline,
+                        fileInfo.layer == BoardLayer.Outline ||
+                        fileInfo.layer == BoardLayer.Mill,
                         -1);
                 }
             });

@@ -81,34 +81,32 @@ function drawPolygon(polygon:Float64Array, context:Path2D) {
 }
 
 function createPathCache(polygons:GerberPolygons):{solid:Path2D, thin:Path2D} {
-    let solidPath = new Path2D();
-    let isEmpty = true;
+    let solidPath = undefined;
     if (polygons.solids && polygons.solids.length > 0) {
         polygons.solids
             .filter(p => p.length > 1)
             .forEach(p => {
+                if (!solidPath) {
+                    solidPath = new Path2D();
+                }
                 drawPolygon(p, solidPath);
-                isEmpty = false;
             });
-        if (!isEmpty) {
+        if (solidPath) {
             solidPath.closePath();
-        } else {
-            solidPath = undefined;
         }
     }
-    let thinPath = new Path2D();
-    isEmpty = true;
+    let thinPath = undefined;
     if (polygons.thins && polygons.thins.length > 0) {
         polygons.thins
             .filter(p => p.length > 1)
             .forEach(p => {
+                if (!thinPath) {
+                    thinPath = new Path2D();
+                }
                 drawPolygon(p, thinPath);
-                isEmpty = false;
             });
-        if (!isEmpty) {
+        if (thinPath) {
             thinPath.closePath();
-        } else {
-            thinPath = undefined;
         }
     }
     return {solid:solidPath, thin:thinPath};
