@@ -26,15 +26,19 @@ class GerberRenderer {
         this.processInput();
     }
 
-    gerberToPolygons(fileName:string, content:string, unzipDuration:number) {
+    gerberToPolygons(
+        fileName:string,
+        content:string,
+        isOutline:boolean,
+        unzipDuration:number) {
         Init.then(() => {
             try {
                 let renderStart = performance.now();
-                let polygons = GerberToPolygons(content);
+                let polygons = GerberToPolygons(content, isOutline);
                 let renderEnd = performance.now();
                 let status = 'done';
-                if ((polygons.solids.length == 0 
-                     && polygons.thins.length == 0)
+                if (((!polygons.solids || polygons.solids.length == 0) 
+                     && (!polygons.thins || polygons.thins.length == 0))
                     || polygons.bounds == undefined) {
                     status = 'empty';
                 }
@@ -147,7 +151,11 @@ class GerberRenderer {
                     } else if (fileType == BoardFileType.Centroid) {
                         this.centroidFile(fileName, content, endUnzip - startUnzip);
                     } else {
-                        this.gerberToPolygons(fileName, content, endUnzip - startUnzip);
+                        this.gerberToPolygons(
+                            fileName,
+                            content,
+                            fileInfo.layer == BoardLayer.Outline,
+                            endUnzip - startUnzip);
                     }
                 });
         }
@@ -189,7 +197,11 @@ class GerberRenderer {
                 } else if (fileType == BoardFileType.Centroid) {
                     this.centroidFile(fileName, file.content, -1);
                 } else {
-                    this.gerberToPolygons(fileName, file.content, -1);
+                    this.gerberToPolygons(
+                        fileName,
+                        file.content,
+                        fileInfo.layer == BoardLayer.Outline,
+                        -1);
                 }
             });
         }

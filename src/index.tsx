@@ -1,8 +1,6 @@
 import * as React from "react";
 import * as ReactDOM from "react-dom";
 
-import {Hello} from "./components/Hello";
-import {LayerName} from "./components/LayerName";
 import {FileOpenButton} from "./components/FileOpenButton";
 import {CanvasViewer} from "./components/CanvasViewer";
 import * as ReactGA from 'react-ga';
@@ -12,7 +10,6 @@ import {BoardLayer, BoardSide} from "../../grbparser/dist/gerberutils";
 import {AsyncGerberParserInterface} from "./AsyncGerberParser";
 import {LayerList} from "./components/LayerList";
 import * as Color from 'color';
-import { DrillHole } from "grbparser/dist/excellonparser";
 
 export interface LayerInfo {
     readonly fileName:string;
@@ -78,7 +75,7 @@ class AppState {
 
 function drawPolygon(polygon:Float64Array, context:Path2D) {
     context.moveTo(polygon[0], polygon[1]);
-    for (let idx = 2; idx < polygon.length; idx += 2) {
+    for (let idx = 2; idx + 1 < polygon.length; idx += 2) {
         context.lineTo(polygon[idx], polygon[idx + 1]);
     }
 }
@@ -86,27 +83,33 @@ function drawPolygon(polygon:Float64Array, context:Path2D) {
 function createPathCache(polygons:GerberPolygons):{solid:Path2D, thin:Path2D} {
     let solidPath = new Path2D();
     let isEmpty = true;
-    polygons.solids
-        .filter(p => p.length > 1)
-        .forEach(p => {
-            drawPolygon(p, solidPath);
-            isEmpty = false;
-        });
-    if (!isEmpty) {
-        solidPath.closePath();
-    } else {
-        solidPath = undefined;
+    if (polygons.solids && polygons.solids.length > 0) {
+        polygons.solids
+            .filter(p => p.length > 1)
+            .forEach(p => {
+                drawPolygon(p, solidPath);
+                isEmpty = false;
+            });
+        if (!isEmpty) {
+            solidPath.closePath();
+        } else {
+            solidPath = undefined;
+        }
     }
     let thinPath = new Path2D();
     isEmpty = true;
-    polygons.thins
-        .filter(p => p.length > 1)
-        .forEach(p => {
-            drawPolygon(p, thinPath);
-            isEmpty = false;
-        });
-    if (isEmpty) {
-        thinPath = undefined;
+    if (polygons.thins && polygons.thins.length > 0) {
+        polygons.thins
+            .filter(p => p.length > 1)
+            .forEach(p => {
+                drawPolygon(p, thinPath);
+                isEmpty = false;
+            });
+        if (!isEmpty) {
+            thinPath.closePath();
+        } else {
+            thinPath = undefined;
+        }
     }
     return {solid:solidPath, thin:thinPath};
 }
