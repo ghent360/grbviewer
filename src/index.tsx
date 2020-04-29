@@ -22,8 +22,8 @@ export interface LayerInfo {
     readonly content:string,
     readonly selected:boolean;
     readonly opacity:number;
-    readonly solid:Path2D;
-    readonly thin:Path2D;
+    readonly solid:Array<Path2D>;
+    readonly thin:Array<Path2D>;
     readonly color:Color;
 }
 
@@ -62,8 +62,8 @@ class LayerFile implements LayerInfo {
         public centers:ComponentCenters,
         public selected:boolean,
         public opacity:number,
-        public solid:Path2D,
-        public thin:Path2D,
+        public solid:Array<Path2D>,
+        public thin:Array<Path2D>,
         public color:Color) {}
 }
 
@@ -80,34 +80,28 @@ function drawPolygon(polygon:Float64Array, context:Path2D) {
     }
 }
 
-function createPathCache(polygons:GerberPolygons):{solid:Path2D, thin:Path2D} {
-    let solidPath = undefined;
+function createPathCache(polygons:GerberPolygons):{solid:Array<Path2D>, thin:Array<Path2D>} {
+    let solidPath:Array<Path2D> = [undefined];
     if (polygons.solids && polygons.solids.length > 0) {
-        polygons.solids
+        solidPath = polygons.solids
             .filter(p => p.length > 1)
-            .forEach(p => {
-                if (!solidPath) {
-                    solidPath = new Path2D();
-                }
-                drawPolygon(p, solidPath);
+            .map(p => {
+                let path = new Path2D();
+                drawPolygon(p, path);
+                path.closePath();
+                return path;
             });
-        if (solidPath) {
-            solidPath.closePath();
-        }
     }
-    let thinPath = undefined;
+    let thinPath:Array<Path2D> = undefined;
     if (polygons.thins && polygons.thins.length > 0) {
-        polygons.thins
+        thinPath = polygons.thins
             .filter(p => p.length > 1)
-            .forEach(p => {
-                if (!thinPath) {
-                    thinPath = new Path2D();
-                }
-                drawPolygon(p, thinPath);
+            .map(p => {
+                let path = new Path2D();
+                drawPolygon(p, path);
+                path.closePath();
+                return path;
             });
-        if (thinPath) {
-            thinPath.closePath();
-        }
     }
     return {solid:solidPath, thin:thinPath};
 }

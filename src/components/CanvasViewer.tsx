@@ -287,14 +287,8 @@ export class CanvasViewer extends React.Component<CanvasViewerProps, CanvasViewe
         }
         if (outlineLayers.length > 0) {
             outlineLayers.forEach(o => {
-                let path:Path2D = o.thin;
-                if (path == undefined) {
-                    // Hmm what to do if there is no thin polygon path
-                    // filling the solid path, just draws the cutout shape.
-                    //path = this.state.polygonPaths.get(o.fileName + ":solid");
-                }
-                if (path != undefined) {
-                    outline.push(path);
+                if (o.thin) {
+                    outline.push(...o.thin);
                     filledOutline = true;
                 }
             });
@@ -367,7 +361,7 @@ export class CanvasViewer extends React.Component<CanvasViewerProps, CanvasViewe
                         outline.forEach(p => context.fill(p));
                     }
                     context.fillStyle = this.getSolidColor(l);
-                    context.fill(path);
+                    path.forEach(p => context.fill(p));
                 }
                 path = l.thin;
                 if (path != undefined) {
@@ -376,7 +370,7 @@ export class CanvasViewer extends React.Component<CanvasViewerProps, CanvasViewe
                     context.lineWidth = 1/scale;
                     context.globalAlpha = l.opacity;
                     context.strokeStyle = this.getBorderColor(l);
-                    context.stroke(path);
+                    path.forEach(p => context.stroke(p));
                 }
                 if (l.holes != undefined) {
                     context.lineWidth = 0;
