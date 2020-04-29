@@ -48,7 +48,6 @@ class PolygonBase extends React.Component<PolygonProps, {}> {
     prepareData(closed:boolean):string {
         let result:Array<String> = [];
         this.props.polygonSet
-            .filter(p => p.length > 0)
             .forEach(polygon => {
                 let start = this.transform({x:polygon[0], y:polygon[1]});
                 let d = [`M ${start.x.toFixed(this.props.precision)} ${start.y.toFixed(this.props.precision)}`];

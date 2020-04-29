@@ -11,6 +11,12 @@ import {AsyncGerberParserInterface} from "./AsyncGerberParser";
 import {LayerList} from "./components/LayerList";
 import * as Color from 'color';
 
+export interface CachedPolygon {
+    readonly path:Path2D;
+    readonly isClosed:boolean;
+    readonly isCutout:boolean;
+}
+
 export interface LayerInfo {
     readonly fileName:string;
     readonly boardLayer:BoardLayer,
@@ -22,8 +28,8 @@ export interface LayerInfo {
     readonly content:string,
     readonly selected:boolean;
     readonly opacity:number;
-    readonly solid:Array<Path2D>;
-    readonly thin:Array<Path2D>;
+    readonly solid:Array<CachedPolygon>;
+    readonly thin:Array<CachedPolygon>;
     readonly color:Color;
 }
 
@@ -62,8 +68,8 @@ class LayerFile implements LayerInfo {
         public centers:ComponentCenters,
         public selected:boolean,
         public opacity:number,
-        public solid:Array<Path2D>,
-        public thin:Array<Path2D>,
+        public solid:Array<CachedPolygon>,
+        public thin:Array<CachedPolygon>,
         public color:Color) {}
 }
 
@@ -73,6 +79,20 @@ class AppState {
     bounds:Bounds;
 }
 
+interface BBox {
+    xmin:number;
+    xmax:number;
+    ymin:number;
+    ymax:number
+}
+
+function isClosed(polygon:Float64Array, tolerance:number = 1E-2) {
+    if (polygon.length < 4) return false;
+    let dx = polygon[0] - polygon[polygon.length - 2];
+    let dy = polygon[1] - polygon[polygon.length - 1];
+    return (dx*dx + dy*dy) < tolerance;
+}
+
 function drawPolygon(polygon:Float64Array, context:Path2D) {
     context.moveTo(polygon[0], polygon[1]);
     for (let idx = 2; idx + 1 < polygon.length; idx += 2) {
@@ -80,28 +100,62 @@ function drawPolygon(polygon:Float64Array, context:Path2D) {
     }
 }
 
-function createPathCache(polygons:GerberPolygons):{solid:Array<Path2D>, thin:Array<Path2D>} {
-    let solidPath:Array<Path2D> = [undefined];
+function polygonBbox(p:Float64Array):BBox {
+    let xmin = p[0];
+    let xmax = p[0];
+    let ymin = p[1];
+    let ymax = p[1];
+    for (let idx = 2; idx < p.length; idx += 2) {
+        let x = p[idx];
+        let y = p[idx+1];
+        xmin = Math.min(xmin, x);
+        xmax = Math.max(xmax, x);
+        ymin = Math.min(ymin, y);
+        ymax = Math.max(ymax, y);
+    }
+    return {xmin:xmin, xmax:xmax, ymin:ymin, ymax:ymax};
+}
+
+function containsPoint(box:BBox, x:number, y:number):boolean {
+    return (x > box.xmin && x < box.xmax && y > box.ymin && y < box.ymax);
+}
+
+function contains(a:BBox, b:BBox):boolean {
+    return containsPoint(a, b.xmin, b.ymin) && containsPoint(a, b.xmax, b.ymax);
+}
+
+function createPathCache(polygons:GerberPolygons) : {
+    solid:Array<CachedPolygon>, thin:Array<CachedPolygon>
+} {
+    let solidPath:Array<CachedPolygon> = undefined;
     if (polygons.solids && polygons.solids.length > 0) {
         solidPath = polygons.solids
-            .filter(p => p.length > 1)
             .map(p => {
                 let path = new Path2D();
                 drawPolygon(p, path);
                 path.closePath();
-                return path;
+                return {path:path, isClosed:true, isCutout:false};
             });
     }
-    let thinPath:Array<Path2D> = undefined;
+    let thinPath:Array<CachedPolygon> = undefined;
     if (polygons.thins && polygons.thins.length > 0) {
-        thinPath = polygons.thins
-            .filter(p => p.length > 1)
-            .map(p => {
-                let path = new Path2D();
-                drawPolygon(p, path);
-                path.closePath();
-                return path;
-            });
+        let thins = polygons.thins.map(p => {
+            return {points:p, bbox:polygonBbox(p), isClosed:isClosed(p), isCutout:false};
+        });
+        let outlines = thins.filter(p => p.isClosed);
+        outlines.forEach(p => {
+            if (outlines.find(pp => contains(pp.bbox, p.bbox))) {
+                p.isCutout = true;
+            }
+        });
+
+        thinPath = [];
+        for (let idx = 0; idx < thins.length; idx++) {
+            let path = new Path2D();
+            drawPolygon(thins[idx].points, path);
+            //path.closePath();
+            thinPath.push({path:path, isClosed:thins[idx].isClosed, isCutout:thins[idx].isCutout});
+        }
     }
     return {solid:solidPath, thin:thinPath};
 }
@@ -151,7 +205,7 @@ class FileReaderList {
         console.log(`created file reader for ${this.incomplete} files`);
     }
 
-    read(cb:(contnent:Array<FileContent>) => void) {
+    read(cb:(content:Array<FileContent>) => void) {
         this.files.forEach(file => {
             let reader = new FileReader();
             reader.onload = (e:ProgressEvent) => {
@@ -424,7 +478,7 @@ class App extends React.Component<{}, AppState> {
                         onChangeOpacity={(fileName, opacity) => this.onChangeOpacity(fileName, opacity)}
                         onChangeColor={(fileName, color) => this.onChangeColor(fileName, color)}/>
                     <span className="help" style={{fontSize:"12px"}}>
-                        <br/>Pan: mouse down and dragg a point in the image
+                        <br/>Pan: mouse down and drag a point in the image
                         <br/>Zoom: use the mouse wheel
                         <br/>press 'h' for a horizontal flip
                         <br/>press 'v' for a vertical flip
