@@ -19,6 +19,11 @@ interface ContentSize {
     contentMinY:number;
 }
 
+interface Outline {
+    path:Path2D;
+    isCutout:boolean;
+}
+
 interface CanvasViewerState {
     selection:Array<LayerInfo>;
     pixelRatio:number;
@@ -30,6 +35,7 @@ interface CanvasViewerState {
     offsetY:number;
     hFlip:boolean;
     vFlip:boolean;
+    outline:Array<Outline>;
 }
 
 function toString2(n:number):string {
@@ -68,7 +74,8 @@ export class CanvasViewer extends React.Component<CanvasViewerProps, CanvasViewe
             offsetY:0,
             selection: props.layers ? props.layers.filter(l => l.selected) : undefined,
             hFlip:false,
-            vFlip:true
+            vFlip:true,
+            outline:this.calcBoardOutline()
         }
         this.scale = 1;
         this.offsetX = 0;
@@ -104,6 +111,7 @@ export class CanvasViewer extends React.Component<CanvasViewerProps, CanvasViewe
         let newState:any = {
             contentSize:this.computeContentSize(nextProps),
             selection: nextProps.layers ? nextProps.layers.filter(l => l.selected) : undefined,
+            outline:this.calcBoardOutline()
         };
         if (resetView) {
             newState.scale = 1;
@@ -115,7 +123,7 @@ export class CanvasViewer extends React.Component<CanvasViewerProps, CanvasViewe
     
     componentDidMount() {
         this.handleResize(false);
-        // TODO: add ResizeObservable to habdle all element resize notifications
+        // TODO: add ResizeObservable to handle all element resize notifications
         window.addEventListener('resize', this.handleResize.bind(this));
         let canvas = this.refs.canvas as HTMLCanvasElement;
         canvas.addEventListener('wheel', this.handleWheel.bind(this));
@@ -258,17 +266,10 @@ export class CanvasViewer extends React.Component<CanvasViewerProps, CanvasViewe
         }
     }
 
-    drawOutline(context:CanvasRenderingContext2D) {
-        let outline:Array<Path2D> = this.calcBoardOutline();
-        context.fillStyle = colorFR4;
-        outline.forEach(p => context.fill(p));
-    }
-
-    calcBoardOutline():Array<Path2D> {
-        let selection = this.state.selection;
-        let outlineLayers = selection.filter(l => l.boardLayer == BoardLayer.Outline);
+    calcBoardOutline():Array<Outline> {
+        let outlineLayers = this.props.layers.filter(l => l.boardLayer == BoardLayer.Outline);
         let filledOutline = false;
-        let outline:Array<Path2D> = [];
+        let outline:Array<Outline> = [];
         /*
         if (outlineLayers.length == 0) {
             outlineLayers = this.props.layers.filter(
@@ -288,20 +289,21 @@ export class CanvasViewer extends React.Component<CanvasViewerProps, CanvasViewe
         if (outlineLayers.length > 0) {
             outlineLayers.forEach(o => {
                 if (o.thin) {
-                    outline.push(...o.thin);
+                    outline.push(...o.thin.filter(p => p.isClosed));
                     filledOutline = true;
                 }
             });
         }
         if (!filledOutline) {
             // We could not find anything to fill as outline, just draw min/max rectangle
+            let contentSize = this.computeContentSize(this.props);
             let rect = new Path2D();
             rect.rect(
-                this.state.contentSize.contentMinX,
-                this.state.contentSize.contentMinY,
-                this.state.contentSize.contentWidth,
-                this.state.contentSize.contentHeight);
-            outline.push(rect);
+                contentSize.contentMinX,
+                contentSize.contentMinY,
+                contentSize.contentWidth,
+                contentSize.contentHeight);
+            outline.push({path:rect, isCutout:false});
         }
         return outline;
     }
@@ -310,17 +312,15 @@ export class CanvasViewer extends React.Component<CanvasViewerProps, CanvasViewe
         let selection = this.state.selection;
         let width = this.state.width;
         let height = this.state.height;
-        let outline:Array<Path2D>;
         if (selection.length > 1) {
             selection.sort((a, b) => a.boardLayer - b.boardLayer);
-            outline = this.calcBoardOutline();
         }
         if (selection && width > 0 && height > 0) {
-            let scaleX = width / this.state.contentSize.contentWidth;
-            let scaleY = height / this.state.contentSize.contentHeight;
+            let scaleX = (width - 6) / this.state.contentSize.contentWidth;
+            let scaleY = (height - 6) / this.state.contentSize.contentHeight;
             let scale = Math.min(scaleX, scaleY);
-            let originX = (width - this.state.contentSize.contentWidth * scale) / 2;
-            let originY = (height - this.state.contentSize.contentHeight * scale) / 2;
+            let originX = (width - 6 - this.state.contentSize.contentWidth * scale) / 2;
+            let originY = (height - 6 - this.state.contentSize.contentHeight * scale) / 2;
             // Flip the Y axis
             let xtranslate:number;
             let ytranslate:number;
@@ -348,20 +348,27 @@ export class CanvasViewer extends React.Component<CanvasViewerProps, CanvasViewe
                 -this.state.contentSize.contentMinY);
             if (selection.length > 1) {
                 context.lineWidth = 0;
+
                 context.fillStyle = colorFR4;
-                outline.forEach(p => context.fill(p));
+                this.state.outline.filter(p => !p.isCutout).forEach(p => context.fill(p.path));
+
+                context.fillStyle = "white";
+                this.state.outline.filter(p => p.isCutout).forEach(p => context.fill(p.path));
             }
             selection.forEach(l => {
                 let path = l.solid;
                 if (path != undefined) {
                     context.lineWidth = 0;
                     context.globalAlpha = l.opacity;
-                    if (l.boardLayer == BoardLayer.SolderMask && outline != undefined) {
+                    if (l.boardLayer == BoardLayer.SolderMask && this.state.outline != undefined) {
                         context.fillStyle = 'rgba(32, 2, 94, 0.7)'; // target color #2b1444
-                        outline.forEach(p => context.fill(p));
+                        this.state.outline.filter(p => !p.isCutout).forEach(p => context.fill(p.path));
+
+                        context.fillStyle = "white";
+                        this.state.outline.filter(p => p.isCutout).forEach(p => context.fill(p.path));
                     }
                     context.fillStyle = this.getSolidColor(l);
-                    path.forEach(p => context.fill(p));
+                    path.filter(p => p.isClosed).forEach(p => context.fill(p.path));
                 }
                 path = l.thin;
                 if (path != undefined) {
@@ -370,7 +377,7 @@ export class CanvasViewer extends React.Component<CanvasViewerProps, CanvasViewe
                     context.lineWidth = 1/scale;
                     context.globalAlpha = l.opacity;
                     context.strokeStyle = this.getBorderColor(l);
-                    path.forEach(p => context.stroke(p));
+                    path.forEach(p => context.stroke(p.path));
                 }
                 if (l.holes != undefined) {
                     context.lineWidth = 0;
