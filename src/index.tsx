@@ -28,8 +28,8 @@ export interface LayerInfo {
     readonly content:string,
     readonly selected:boolean;
     readonly opacity:number;
-    readonly solid:Array<CachedPolygon>;
-    readonly thin:Array<CachedPolygon>;
+    readonly solid:Path2D;
+    readonly thin:Path2D;
     readonly color:Color;
 }
 
@@ -68,8 +68,8 @@ class LayerFile implements LayerInfo {
         public centers:ComponentCenters,
         public selected:boolean,
         public opacity:number,
-        public solid:Array<CachedPolygon>,
-        public thin:Array<CachedPolygon>,
+        public solid:Path2D,
+        public thin:Path2D,
         public color:Color) {}
 }
 
@@ -124,37 +124,33 @@ function contains(a:BBox, b:BBox):boolean {
     return containsPoint(a, b.xmin, b.ymin) && containsPoint(a, b.xmax, b.ymax);
 }
 
-function createPathCache(polygons:GerberPolygons) : {
-    solid:Array<CachedPolygon>, thin:Array<CachedPolygon>
-} {
-    let solidPath:Array<CachedPolygon> = undefined;
+function createPathCache(polygons:GerberPolygons):{solid:Path2D, thin:Path2D} {
+    let solidPath = undefined;
     if (polygons.solids && polygons.solids.length > 0) {
-        solidPath = polygons.solids
-            .map(p => {
-                let path = new Path2D();
-                drawPolygon(p, path);
-                path.closePath();
-                return {path:path, isClosed:true, isCutout:false};
+        polygons.solids
+            .filter(p => p.length > 1)
+            .forEach(p => {
+                if (!solidPath) {
+                    solidPath = new Path2D();
+                }
+                drawPolygon(p, solidPath);
             });
+        if (solidPath) {
+            solidPath.closePath();
+        }
     }
-    let thinPath:Array<CachedPolygon> = undefined;
+    let thinPath = undefined;
     if (polygons.thins && polygons.thins.length > 0) {
-        let thins = polygons.thins.map(p => {
-            return {points:p, bbox:polygonBbox(p), isClosed:isClosed(p), isCutout:false};
-        });
-        let outlines = thins.filter(p => p.isClosed);
-        outlines.forEach(p => {
-            if (outlines.find(pp => contains(pp.bbox, p.bbox))) {
-                p.isCutout = true;
-            }
-        });
-
-        thinPath = [];
-        for (let idx = 0; idx < thins.length; idx++) {
-            let path = new Path2D();
-            drawPolygon(thins[idx].points, path);
-            //path.closePath();
-            thinPath.push({path:path, isClosed:thins[idx].isClosed, isCutout:thins[idx].isCutout});
+        polygons.thins
+            .filter(p => p.length > 1)
+            .forEach(p => {
+                if (!thinPath) {
+                    thinPath = new Path2D();
+                }
+                drawPolygon(p, thinPath);
+            });
+        if (thinPath) {
+            thinPath.closePath();
         }
     }
     return {solid:solidPath, thin:thinPath};
